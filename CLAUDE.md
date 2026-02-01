@@ -112,4 +112,17 @@ grep -rn "\.id}" app/ components/ --include="*.tsx" | grep -v "key="  # No raw I
 git diff --stat HEAD              # Review changes
 git add . && git commit -m "closes AGT-XX: description" && git push
 npx convex run agentActions:completeTask '{"agent":"...","ticket":"AGT-XX","action":"completed","summary":"..."}'
+./scripts/linear-report.sh AGT-XX "✅ Done. [summary]. Files: [changed]. Commit: [hash]"
 ```
+
+---
+
+## Agent Reporting Protocol (MANDATORY)
+
+After completing EACH ticket:
+1. `git commit + push` with "closes AGT-XX"
+2. Run Convex completeTask API (updates task status + activity)
+3. Run: `./scripts/linear-report.sh AGT-XX "✅ Done. [summary]. Files: [changed]. Commit: [hash]"`
+
+This posts a comment on Linear so Max (PM) can track progress without copy-paste.
+Never skip this step — Max reads Linear to track your work.

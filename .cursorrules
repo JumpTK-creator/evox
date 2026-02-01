@@ -111,4 +111,15 @@ grep -rn "\.id}" app/ components/ --include="*.tsx" | grep -v "key="  # No raw I
 git diff --stat HEAD              # Review changes
 git add . && git commit -m "closes AGT-XX: description" && git push
 npx convex run agentActions:completeTask '{"agent":"...","ticket":"AGT-XX","action":"completed","summary":"..."}'
+./scripts/linear-report.sh AGT-XX "✅ Done. [summary]. Files: [changed]. Commit: [hash]"
 ```
+
+---
+
+## Post-Task Reporting (MANDATORY)
+
+After every task completion, run:
+```bash
+./scripts/linear-report.sh AGT-XX "✅ Done. [summary]"
+```
+Never skip this step. Max reads Linear to track your work.
