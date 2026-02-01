@@ -2,7 +2,7 @@
 
 import { v } from "convex/values";
 import { action, mutation, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { LinearClient } from "@linear/sdk";
 
