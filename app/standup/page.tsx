@@ -104,9 +104,10 @@ export default function StandupPage() {
         title: t.title,
         identifier: sanitizeIdentifier(t.linearIdentifier),
       });
+      // Phase 0 bug 2: only agent NAME never agent ID in standup view
       return {
-        name: report.agent.name,
-        avatar: report.agent.avatar,
+        name: report.agent.name ?? "Unknown",
+        avatar: report.agent.avatar ?? "?",
         color,
         done: report.completed.map(toTask),
         wip: report.inProgress.map(toTask),

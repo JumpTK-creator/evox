@@ -58,16 +58,20 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                   <div className="relative z-10">
                     <Avatar className="h-8 w-8 border-2 border-zinc-900 bg-zinc-800">
                       <AvatarFallback className="bg-zinc-800 text-xs text-zinc-50">
-                        {activity.agent?.avatar || "?"}
+                        {typeof activity.agent === "object" && activity.agent !== null && "avatar" in activity.agent
+                          ? (activity.agent as { avatar?: string }).avatar ?? "?"
+                          : "?"}
                       </AvatarFallback>
                     </Avatar>
                   </div>
 
-                  {/* Activity content */}
+                  {/* Activity content — always show agent NAME never agent ID (Phase 0 bug 1) */}
                   <div className="flex-1 pb-2">
                     <p className="text-sm text-zinc-300">
                       <span className="font-medium text-zinc-50">
-                        {activity.agent?.name || "Unknown"}
+                        {typeof activity.agent === "object" && activity.agent !== null && "name" in activity.agent
+                          ? (activity.agent as { name?: string }).name ?? "Unknown"
+                          : "Unknown"}
                       </span>{" "}
                       {actionLabels[activity.action] || activity.action}
                       {(() => {
