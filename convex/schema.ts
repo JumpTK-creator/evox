@@ -28,7 +28,7 @@ export default defineSchema({
 
   // Task management
   tasks: defineTable({
-    projectId: v.id("projects"),
+    projectId: v.optional(v.id("projects")),
     title: v.string(),
     description: v.string(),
     status: v.union(
