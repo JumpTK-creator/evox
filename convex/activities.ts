@@ -163,3 +163,63 @@ export const remove = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+// MIGRATION - Backfill activities for existing tasks (one-time)
+// Creates "updated_task_status" activities for all tasks that don't have one
+export const backfillFromTasks = mutation({
+  handler: async (ctx) => {
+    const now = Date.now();
+
+    // Get all tasks
+    const tasks = await ctx.db.query("tasks").collect();
+
+    // Get existing activities to avoid duplicates
+    const existingActivities = await ctx.db.query("activities").collect();
+    const tasksWithActivity = new Set(
+      existingActivities
+        .filter((a) => a.action === "updated_task_status")
+        .map((a) => a.target)
+    );
+
+    // Get system agent (PM) as fallback
+    const agents = await ctx.db.query("agents").collect();
+    const systemAgent = agents.find((a) => a.role === "pm");
+
+    if (!systemAgent) {
+      throw new Error("No PM agent found for backfill");
+    }
+
+    let created = 0;
+
+    for (const task of tasks) {
+      // Skip if already has activity
+      if (tasksWithActivity.has(task._id)) {
+        continue;
+      }
+
+      // Use task assignee or createdBy or system agent
+      const activityAgent = task.assignee || task.createdBy || systemAgent._id;
+
+      await ctx.db.insert("activities", {
+        agent: activityAgent,
+        action: "updated_task_status",
+        target: task._id,
+        metadata: {
+          from: null,
+          to: task.status,
+          source: "backfill",
+          linearIdentifier: task.linearIdentifier || null,
+        },
+        createdAt: task.updatedAt || task.createdAt || now,
+      });
+
+      created++;
+    }
+
+    return {
+      message: `Backfilled ${created} activities for ${tasks.length} tasks`,
+      created,
+      total: tasks.length,
+    };
+  },
+});

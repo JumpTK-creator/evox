@@ -376,7 +376,14 @@ export const upsertByLinearId = mutation({
 
     const existingTask = existingTasks[0];
 
+    const now = Date.now();
+
     if (existingTask) {
+      // Track status change for activity creation
+      const oldStatus = existingTask.status;
+      const newStatus = args.status;
+      const statusChanged = oldStatus !== newStatus;
+
       // Update existing task
       await ctx.db.patch(existingTask._id, {
         title: args.title,
@@ -389,9 +396,27 @@ export const upsertByLinearId = mutation({
         linearUrl: args.linearUrl,
       });
 
+      // Create activity if status changed
+      if (statusChanged) {
+        const activityAgent = args.assignee || args.createdBy;
+        await ctx.db.insert("activities", {
+          agent: activityAgent,
+          action: "updated_task_status",
+          target: existingTask._id,
+          metadata: {
+            from: oldStatus,
+            to: newStatus,
+            source: "linear_sync",
+            linearIdentifier: args.linearIdentifier,
+          },
+          createdAt: now,
+        });
+      }
+
       return {
         taskId: existingTask._id,
         created: false,
+        statusChanged,
       };
     } else {
       // Create new task - need projectId
@@ -414,9 +439,25 @@ export const upsertByLinearId = mutation({
         linearUrl: args.linearUrl,
       });
 
+      // Create activity for new task with initial status
+      const activityAgent = args.assignee || args.createdBy;
+      await ctx.db.insert("activities", {
+        agent: activityAgent,
+        action: "updated_task_status",
+        target: taskId,
+        metadata: {
+          from: null,
+          to: args.status,
+          source: "linear_sync",
+          linearIdentifier: args.linearIdentifier,
+        },
+        createdAt: now,
+      });
+
       return {
         taskId,
         created: true,
+        statusChanged: true,
       };
     }
   },
