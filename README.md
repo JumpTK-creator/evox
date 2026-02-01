@@ -22,9 +22,7 @@
 
 ## The Question
 
-> **"Khi một AI agent bắt đầu một session mới, nó mất toàn bộ context. Làm sao để nó hoạt động liên tục như một con người thực sự?"**
->
-> *When an AI agent starts a new session, it loses everything. How do you make it work continuously — like a real human teammate?*
+> **"When an AI agent starts a new session, it loses everything. How do you make it work continuously — like a real human teammate?"**
 
 This isn't a theoretical question. It's the reason EVOX exists.
 
