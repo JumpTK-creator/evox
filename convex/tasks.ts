@@ -216,6 +216,53 @@ export const assign = mutation({
   },
 });
 
+// UPDATE - Assign agent to task (simplified API)
+export const assignAgent = mutation({
+  args: {
+    taskId: v.id("tasks"),
+    agentId: v.id("agents"),
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.taskId);
+    if (!task) throw new Error("Task not found");
+
+    const agent = await ctx.db.get(args.agentId);
+    if (!agent) throw new Error("Agent not found");
+
+    const now = Date.now();
+    await ctx.db.patch(args.taskId, {
+      assignee: args.agentId,
+      updatedAt: now,
+    });
+
+    // Log activity (use the agent being assigned as the actor)
+    await ctx.db.insert("activities", {
+      agent: args.agentId,
+      action: "assigned_task",
+      target: args.taskId,
+      metadata: { assignee: args.agentId },
+      createdAt: now,
+    });
+
+    // Create notification for the assignee
+    await ctx.db.insert("notifications", {
+      to: args.agentId,
+      type: "assignment",
+      title: "Task Assigned",
+      message: `You've been assigned: ${task.title}`,
+      read: false,
+      relatedTask: args.taskId,
+      createdAt: now,
+    });
+
+    return {
+      success: true,
+      taskId: args.taskId,
+      agentId: args.agentId,
+    };
+  },
+});
+
 // UPDATE - Update task details
 export const update = mutation({
   args: {
