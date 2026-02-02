@@ -38,22 +38,22 @@ export function AgentListItem({ name, role, status, avatar, isSelected, onClick 
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-        isSelected ? "bg-gray-800 text-white" : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
+        "flex h-14 w-full items-center gap-3 border-b border-[#1a1a1a] px-4 py-3 text-left transition-colors",
+        isSelected
+          ? "border-l-2 border-l-white bg-[#222] text-zinc-50"
+          : "hover:bg-[#1a1a1a] text-zinc-400"
       )}
     >
-      <div className="relative shrink-0">
-        <Avatar className="h-9 w-9 border-2 border-gray-800">
-          <AvatarFallback className="bg-zinc-800 text-xs text-zinc-50">{avatar}</AvatarFallback>
-        </Avatar>
-        <span className={cn("absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#0a0a0a]", dotColor)} />
-      </div>
+      <span className={cn("h-2 w-2 shrink-0 rounded-full border border-[#0a0a0a]", dotColor)} />
+      <Avatar className="h-5 w-5 shrink-0 border border-[#222]">
+        <AvatarFallback className="bg-[#111] text-[10px] text-zinc-400">{avatar}</AvatarFallback>
+      </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{name}</p>
-        <span className="inline-block rounded-[10px] border border-[#222] bg-[#111] px-2 py-0.5 text-[11px] text-[#888]">
-          {roleLabels[role] ?? role}
-        </span>
+        <p className="truncate text-sm font-medium text-zinc-50">{name}</p>
       </div>
+      <span className="shrink-0 rounded-[10px] border border-[#222] bg-[#111] px-2 py-0.5 text-[11px] text-[#888]">
+        {roleLabels[role] ?? role}
+      </span>
     </button>
   );
 }
