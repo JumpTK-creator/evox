@@ -139,6 +139,79 @@ export const clearRead = mutation({
 });
 
 /**
+ * AGT-116: Dashboard — all notifications grouped by agent (Son sees all). Total unread + byAgent with notifications.
+ */
+export const listAllForDashboard = query({
+  handler: async (ctx) => {
+    const all = await ctx.db.query("notifications").collect();
+    const agents = await ctx.db.query("agents").collect();
+    const agentMap = new Map(agents.map((a) => [a._id, a]));
+
+    const byAgentId = new Map<
+      string,
+      { agentId: string; agentName: string; agentAvatar: string; unreadCount: number; notifications: unknown[] }
+    >();
+
+    for (const n of all) {
+      const key = n.to;
+      if (!byAgentId.has(key)) {
+        const agent = agentMap.get(n.to);
+        byAgentId.set(key, {
+          agentId: key,
+          agentName: agent?.name ?? "Unknown",
+          agentAvatar: agent?.avatar ?? "?",
+          unreadCount: 0,
+          notifications: [],
+        });
+      }
+      const group = byAgentId.get(key)!;
+      if (!n.read) group.unreadCount += 1;
+
+      const taskSummary =
+        n.relatedTask != null
+          ? await ctx.db.get(n.relatedTask).then((t) =>
+              t
+                ? {
+                    id: t._id,
+                    title: t.title,
+                    linearIdentifier: t.linearIdentifier,
+                    linearUrl: t.linearUrl,
+                    status: t.status,
+                    priority: t.priority,
+                  }
+                : null
+            )
+          : null;
+
+      group.notifications.push({
+        _id: n._id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        read: n.read,
+        relatedTask: n.relatedTask,
+        createdAt: n.createdAt,
+        taskSummary,
+      });
+    }
+
+    const byAgent = Array.from(byAgentId.values())
+      .map((g) => ({
+        ...g,
+        notifications: (g.notifications as { createdAt: number; _id: string; type: string; title: string; read: boolean; taskSummary?: unknown }[])
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .slice(0, 20),
+      }))
+      .filter((g) => g.notifications.length > 0)
+      .sort((a, b) => (b.notifications[0]?.createdAt ?? 0) - (a.notifications[0]?.createdAt ?? 0));
+
+    const totalUnread = Array.from(byAgentId.values()).reduce((s, g) => s + g.unreadCount, 0);
+
+    return { totalUnread, byAgent };
+  },
+});
+
+/**
  * AGT-115: Get unread notifications by agent name (for boot protocol)
  */
 export const getUnreadByAgentName = query({

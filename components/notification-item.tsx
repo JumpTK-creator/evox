@@ -1,8 +1,9 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageSquare, Clipboard, RefreshCw } from "lucide-react";
+import { MessageSquare, Clipboard, RefreshCw, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type NotificationType = "mention" | "assignment" | "status_change";
+/** AGT-116: @mention blue, Assignment green, Comment gray */
+export type NotificationType = "mention" | "assignment" | "status_change" | "comment" | "review_request" | "dm";
 
 interface NotificationItemProps {
   id: string;
@@ -10,21 +11,27 @@ interface NotificationItemProps {
   agentName: string;
   agentAvatar: string;
   title: string;
-  timestamp: Date;
+  timestamp: Date | number;
   isUnread: boolean;
   onClick?: () => void;
 }
 
-const typeIcons = {
+const typeIcons: Record<string, typeof MessageSquare> = {
   mention: MessageSquare,
   assignment: Clipboard,
   status_change: RefreshCw,
+  comment: MessageCircle,
+  review_request: MessageSquare,
+  dm: MessageSquare,
 };
 
-const typeColors = {
+const typeColors: Record<string, string> = {
   mention: "text-blue-500",
   assignment: "text-green-500",
   status_change: "text-yellow-500",
+  comment: "text-zinc-500",
+  review_request: "text-zinc-500",
+  dm: "text-zinc-500",
 };
 
 export function NotificationItem({
@@ -36,11 +43,12 @@ export function NotificationItem({
   isUnread,
   onClick,
 }: NotificationItemProps) {
-  const Icon = typeIcons[type];
+  const Icon = typeIcons[type] ?? MessageCircle;
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | number) => {
     const now = Date.now();
-    const diff = now - date.getTime();
+    const ts = typeof date === "number" ? date : date.getTime();
+    const diff = now - ts;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
