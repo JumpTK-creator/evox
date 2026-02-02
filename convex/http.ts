@@ -468,6 +468,223 @@ http.route({
 });
 
 // ============================================================
+// AGT-112: TASK COMMENT ENDPOINTS
+// ============================================================
+
+/**
+ * POST /comment — Post a comment on a task
+ * Body: { taskId: "...", agentName: "sam", content: "..." }
+ */
+http.route({
+  path: "/comment",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      const { taskId, agentName, content, attachments } = body;
+
+      if (!taskId || !agentName || !content) {
+        return new Response(
+          JSON.stringify({ error: "taskId, agentName, and content are required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Find task by linearIdentifier (AGT-XXX) or by convex ID
+      let actualTaskId: Id<"tasks"> | string = taskId;
+      if (taskId.toUpperCase().startsWith("AGT-")) {
+        const allTasks = await ctx.runQuery(api.tasks.list, {});
+        const task = allTasks.find(
+          (t: any) => t.linearIdentifier?.toUpperCase() === taskId.toUpperCase()
+        );
+        if (!task) {
+          return new Response(
+            JSON.stringify({ error: `Task ${taskId} not found` }),
+            { status: 404, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        actualTaskId = task._id;
+      }
+
+      const result = await ctx.runMutation(api.taskComments.postComment, {
+        taskId: actualTaskId as Id<"tasks">,
+        agentName,
+        content,
+        attachments,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Post comment error:", error);
+      return new Response(
+        JSON.stringify({
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : String(error),
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /comments?taskId=AGT-XXX — Get comments for a task
+ */
+http.route({
+  path: "/comments",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const taskId = url.searchParams.get("taskId");
+
+      if (!taskId) {
+        return new Response(
+          JSON.stringify({ error: "taskId query parameter is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Find task by linearIdentifier (AGT-XXX) or by convex ID
+      let actualTaskId: Id<"tasks"> | string = taskId;
+      if (taskId.toUpperCase().startsWith("AGT-")) {
+        const allTasks = await ctx.runQuery(api.tasks.list, {});
+        const task = allTasks.find(
+          (t: any) => t.linearIdentifier?.toUpperCase() === taskId.toUpperCase()
+        );
+        if (!task) {
+          return new Response(
+            JSON.stringify({ error: `Task ${taskId} not found` }),
+            { status: 404, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        actualTaskId = task._id;
+      }
+
+      const comments = await ctx.runQuery(api.taskComments.listByTask, {
+        taskId: actualTaskId as Id<"tasks">,
+      });
+
+      return new Response(JSON.stringify({ comments }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Get comments error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+// ============================================================
+// AGT-118: DIRECT MESSAGING ENDPOINTS
+// ============================================================
+
+/**
+ * POST /dm — Send a direct message from one agent to another
+ * Body: { from: "sam", to: "leo", content: "...", taskId?: "AGT-XXX", priority?: "urgent" }
+ */
+http.route({
+  path: "/dm",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      const { from, to, content, taskId, priority } = body;
+
+      if (!from || !to || !content) {
+        return new Response(
+          JSON.stringify({ error: "from, to, and content are required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Find task by linearIdentifier if provided
+      let relatedTaskId = undefined;
+      if (taskId) {
+        if (taskId.toUpperCase().startsWith("AGT-")) {
+          const allTasks = await ctx.runQuery(api.tasks.list, {});
+          const task = allTasks.find(
+            (t: any) => t.linearIdentifier?.toUpperCase() === taskId.toUpperCase()
+          );
+          if (task) {
+            relatedTaskId = task._id;
+          }
+        } else {
+          relatedTaskId = taskId;
+        }
+      }
+
+      const result = await ctx.runMutation(api.agentMessaging.sendDirectMessage, {
+        fromAgent: from,
+        toAgent: to,
+        content,
+        relatedTaskId,
+        priority: priority || "normal",
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Send DM error:", error);
+      return new Response(
+        JSON.stringify({
+          error: "Internal server error",
+          message: error instanceof Error ? error.message : String(error),
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /dms?agent=sam&unreadOnly=true — Get DMs for an agent
+ */
+http.route({
+  path: "/dms",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const agent = url.searchParams.get("agent");
+      const unreadOnly = url.searchParams.get("unreadOnly") === "true";
+
+      if (!agent) {
+        return new Response(
+          JSON.stringify({ error: "agent query parameter is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const messages = await ctx.runQuery(api.agentMessaging.getDirectMessages, {
+        agentName: agent,
+        unreadOnly,
+      });
+
+      return new Response(JSON.stringify({ messages }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Get DMs error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+// ============================================================
 // WEBHOOK ENDPOINTS (AGT-128: Max Visibility Pipeline)
 // ============================================================
 

@@ -14,6 +14,7 @@ import type * as agentActions from "../agentActions.js";
 import type * as agentMappings from "../agentMappings.js";
 import type * as agentMemory from "../agentMemory.js";
 import type * as agentMessages from "../agentMessages.js";
+import type * as agentMessaging from "../agentMessaging.js";
 import type * as agents from "../agents.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
@@ -30,6 +31,7 @@ import type * as settings from "../settings.js";
 import type * as skills from "../skills.js";
 import type * as slackNotify from "../slackNotify.js";
 import type * as standup from "../standup.js";
+import type * as taskComments from "../taskComments.js";
 import type * as tasks from "../tasks.js";
 import type * as webhooks from "../webhooks.js";
 
@@ -46,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   agentMappings: typeof agentMappings;
   agentMemory: typeof agentMemory;
   agentMessages: typeof agentMessages;
+  agentMessaging: typeof agentMessaging;
   agents: typeof agents;
   crons: typeof crons;
   dashboard: typeof dashboard;
@@ -62,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   skills: typeof skills;
   slackNotify: typeof slackNotify;
   standup: typeof standup;
+  taskComments: typeof taskComments;
   tasks: typeof tasks;
   webhooks: typeof webhooks;
 }>;

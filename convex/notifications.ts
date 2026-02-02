@@ -1,28 +1,34 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-// CREATE
+// CREATE (AGT-115: enhanced with from field and new types)
 export const create = mutation({
   args: {
     to: v.id("agents"),
+    from: v.optional(v.id("agents")), // AGT-115: Who triggered it
     type: v.union(
       v.literal("mention"),
       v.literal("assignment"),
       v.literal("status_change"),
-      v.literal("review_request")
+      v.literal("review_request"),
+      v.literal("comment"),  // AGT-112
+      v.literal("dm")        // AGT-118
     ),
     title: v.string(),
     message: v.string(),
     relatedTask: v.optional(v.id("tasks")),
+    commentId: v.optional(v.id("taskComments")), // AGT-112
   },
   handler: async (ctx, args) => {
     const notificationId = await ctx.db.insert("notifications", {
       to: args.to,
+      from: args.from,
       type: args.type,
       title: args.title,
       message: args.message,
       read: false,
       relatedTask: args.relatedTask,
+      commentId: args.commentId,
       createdAt: Date.now(),
     });
     return notificationId;
@@ -129,6 +135,42 @@ export const clearRead = mutation({
     }
 
     return toDelete.length;
+  },
+});
+
+/**
+ * AGT-115: Get unread notifications by agent name (for boot protocol)
+ */
+export const getUnreadByAgentName = query({
+  args: { agentName: v.string() },
+  handler: async (ctx, args) => {
+    const agents = await ctx.db.query("agents").collect();
+    const agent = agents.find(
+      (a) => a.name.toLowerCase() === args.agentName.toLowerCase()
+    );
+
+    if (!agent) {
+      return [];
+    }
+
+    const unread = await ctx.db
+      .query("notifications")
+      .withIndex("by_read_status", (q) => q.eq("to", agent._id).eq("read", false))
+      .order("desc")
+      .collect();
+
+    // Enrich with sender info
+    const enriched = await Promise.all(
+      unread.map(async (n) => {
+        const fromAgent = n.from ? await ctx.db.get(n.from) : null;
+        return {
+          ...n,
+          fromAgentName: fromAgent?.name || null,
+        };
+      })
+    );
+
+    return enriched;
   },
 });
 

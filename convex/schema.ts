@@ -76,7 +76,7 @@ export default defineSchema({
     .index("by_project_status", ["projectId", "status"])
     .index("by_linearId", ["linearId"]),
 
-  // Communication
+  // Communication - Channel messages
   messages: defineTable({
     from: v.id("agents"),
     content: v.string(),
@@ -91,6 +91,19 @@ export default defineSchema({
   })
     .index("by_channel", ["channel"])
     .index("by_thread", ["threadId"]),
+
+  // AGT-112: Task Comments (comment threads on tasks)
+  taskComments: defineTable({
+    taskId: v.id("tasks"),
+    fromAgentId: v.id("agents"),
+    content: v.string(), // Markdown supported
+    attachments: v.optional(v.array(v.id("documents"))),
+    // @mentions parsed from content
+    mentions: v.optional(v.array(v.id("agents"))),
+    createdAt: v.number(),
+  })
+    .index("by_task", ["taskId", "createdAt"])
+    .index("by_agent", ["fromAgentId", "createdAt"]),
 
   // Agent-to-agent messages (AGT-123: handoff, update, request, fyi)
   agentMessages: defineTable({
@@ -175,24 +188,29 @@ export default defineSchema({
     .index("by_task", ["taskId", "timestamp"])
     .index("by_linearId", ["linearIdentifier", "timestamp"]),
 
-  // Notification system
+  // AGT-115: Notification system (enhanced for @mentions)
   notifications: defineTable({
     to: v.id("agents"),
+    from: v.optional(v.id("agents")), // AGT-115: Who triggered the notification
     type: v.union(
       v.literal("mention"),
       v.literal("assignment"),
       v.literal("status_change"),
-      v.literal("review_request")
+      v.literal("review_request"),
+      v.literal("comment"),  // AGT-112: New comment on a task
+      v.literal("dm")        // AGT-118: Direct message
     ),
     title: v.string(),
     message: v.string(),
     read: v.boolean(),
     relatedTask: v.optional(v.id("tasks")),
     messageId: v.optional(v.id("messages")),
+    commentId: v.optional(v.id("taskComments")), // AGT-112
     createdAt: v.number(),
   })
     .index("by_recipient", ["to"])
-    .index("by_read_status", ["to", "read"]),
+    .index("by_read_status", ["to", "read"])
+    .index("by_agent_time", ["to", "createdAt"]),
 
   // Documentation
   documents: defineTable({
