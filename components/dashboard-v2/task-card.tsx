@@ -63,7 +63,7 @@ export function TaskCard({ task, onClick, onAssigneeClick }: TaskCardProps) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="font-mono text-xs text-[#888] hover:text-zinc-400"
+              className="font-mono text-xs text-[#888] hover:text-zinc-400 whitespace-nowrap"
             >
               {task.linearIdentifier}
             </a>

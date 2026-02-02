@@ -95,7 +95,7 @@ export function NotificationItem({
         {taskSummary?.linearIdentifier ? (
           <div className="space-y-0.5">
             <p className="text-sm text-zinc-300">
-              <span className="font-mono font-semibold">{taskSummary.linearIdentifier}</span>
+              <span className="font-mono font-semibold whitespace-nowrap">{taskSummary.linearIdentifier}</span>
               {type === "assignment" && " assigned to you"}
               {type === "mention" && " mentioned you"}
               {type === "status_change" && " status changed"}

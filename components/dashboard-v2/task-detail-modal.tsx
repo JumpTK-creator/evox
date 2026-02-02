@@ -72,7 +72,7 @@ export function TaskDetailModal({ open, task, onClose }: TaskDetailModalProps) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 mb-2">
               {task.linearIdentifier && (
-                <span className={cn("font-mono text-sm font-semibold", statusStyle.text)}>
+                <span className={cn("font-mono text-sm font-semibold whitespace-nowrap", statusStyle.text)}>
                   {task.linearIdentifier}
                 </span>
               )}

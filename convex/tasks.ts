@@ -795,6 +795,7 @@ export const backfillAgentName = mutation({
       // Only update if it's different from current (or current is undefined/max)
       const currentAgentName = task.agentName?.toLowerCase() || "max";
       if (newAgentName !== currentAgentName) {
+        console.log(`Patching ${task.linearIdentifier}: ${currentAgentName} -> ${newAgentName}`);
         await ctx.db.patch(task._id, { agentName: newAgentName });
         changes.push({
           linearId: task.linearIdentifier || task._id.toString(),
