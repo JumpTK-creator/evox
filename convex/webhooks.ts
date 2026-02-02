@@ -265,7 +265,7 @@ export const processGitHubPush = action({
  * Process Vercel deployment event
  * Post status updates and create P0 bug tickets on failure
  */
-export const processVercelDeploy = action({
+const processVercelDeployAction = action({
   args: {
     payload: v.any(),
   },
@@ -361,6 +361,8 @@ Check Vercel logs and fix immediately.
     return { processed: true, status, results };
   },
 });
+
+export const processVercelDeploy = processVercelDeployAction;
 
 /**
  * List recent webhook events (for dashboard)
