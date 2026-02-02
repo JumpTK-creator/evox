@@ -3,11 +3,11 @@ import { internal } from "./_generated/api";
 
 const crons = cronJobs();
 
-// Sync Linear issues every 60 minutes (AGT-161: reduced for rate limiting)
+// Sync Linear issues every 15 minutes (AGT-161: optimized GraphQL = ~1 API call per sync)
 // Real-time updates come via /api/webhooks/linear webhook
 crons.interval(
   "sync-linear",
-  { minutes: 60 },
+  { minutes: 15 },
   internal.linearSync.syncAll,
   {}
 );
