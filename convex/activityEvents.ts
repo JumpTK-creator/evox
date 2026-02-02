@@ -486,3 +486,91 @@ export const deleteOldActivities = mutation({
     };
   },
 });
+
+/**
+ * Backfill missing events for tasks that changed status but have no activityEvent
+ * Looks at tasks with recent updatedAt but no corresponding event
+ */
+export const backfillMissingEvents = mutation({
+  args: {
+    hoursBack: v.optional(v.number()), // default 24 hours
+  },
+  handler: async (ctx, args) => {
+    const hours = args.hoursBack ?? 24;
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
+    // Get all tasks updated in the window
+    const allTasks = await ctx.db.query("tasks").collect();
+    const recentTasks = allTasks.filter((t) => t.updatedAt > cutoff);
+
+    // Get all events in the window
+    const allEvents = await ctx.db.query("activityEvents").collect();
+    const recentEvents = allEvents.filter((e) => e.timestamp > cutoff);
+
+    // Build set of taskIds that have events
+    const taskIdsWithEvents = new Set(
+      recentEvents
+        .filter((e) => e.taskId)
+        .map((e) => e.taskId?.toString())
+    );
+
+    // Get agents for attribution
+    const agents = await ctx.db.query("agents").collect();
+    const agentByName = new Map(agents.map((a) => [a.name.toLowerCase(), a]));
+    const defaultAgent = agents.find((a) => a.role === "pm") ?? agents[0];
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const task of recentTasks) {
+      // Skip if already has recent event
+      if (taskIdsWithEvents.has(task._id.toString())) {
+        skipped++;
+        continue;
+      }
+
+      // Find agent from task.agentName or default to PM
+      const agent = task.agentName
+        ? agentByName.get(task.agentName.toLowerCase()) ?? defaultAgent
+        : defaultAgent;
+
+      if (!agent) {
+        skipped++;
+        continue;
+      }
+
+      // Determine event type from status
+      const eventType = task.status === "done" ? "completed" : "status_change";
+      const displayName = agent.name.toUpperCase();
+      const title =
+        eventType === "completed"
+          ? `${displayName} completed ${task.linearIdentifier ?? task.title}`
+          : `${displayName} updated ${task.linearIdentifier ?? task.title}`;
+
+      await ctx.db.insert("activityEvents", {
+        agentId: agent._id,
+        agentName: agent.name.toLowerCase(),
+        category: "task",
+        eventType,
+        title,
+        taskId: task._id,
+        linearIdentifier: task.linearIdentifier,
+        projectId: task.projectId,
+        metadata: {
+          toStatus: task.status,
+          source: "backfill_missing",
+        },
+        timestamp: task.updatedAt,
+      });
+      created++;
+    }
+
+    return {
+      message: `Backfilled ${created} missing events, skipped ${skipped}`,
+      created,
+      skipped,
+      totalRecentTasks: recentTasks.length,
+      hoursBack: hours,
+    };
+  },
+});

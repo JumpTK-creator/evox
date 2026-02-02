@@ -2,6 +2,32 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { resolveAgentIdByName } from "./agentMappings";
+import { Id, Doc } from "./_generated/dataModel";
+import { DatabaseReader } from "./_generated/server";
+
+// Dedup window for activity events (5 minutes)
+const DEDUP_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Check if a similar event was logged recently (within DEDUP_WINDOW_MS)
+ * Same taskId + eventType within window = duplicate
+ */
+async function isDuplicateEvent(
+  db: DatabaseReader,
+  taskId: Id<"tasks">,
+  eventType: string
+): Promise<boolean> {
+  const cutoff = Date.now() - DEDUP_WINDOW_MS;
+  const recentEvents = await db
+    .query("activityEvents")
+    .withIndex("by_task", (q) => q.eq("taskId", taskId))
+    .order("desc")
+    .take(10);
+
+  return recentEvents.some(
+    (e) => e.eventType === eventType && e.timestamp > cutoff
+  );
+}
 
 // CREATE (ADR-001: agentName from caller for attribution)
 export const create = mutation({
@@ -481,35 +507,39 @@ export const upsertByLinearId = mutation({
       });
 
       if (statusChanged) {
-        await ctx.db.insert("activities", {
-          agent: activityAgentId,
-          action: "updated_task_status",
-          target: existingTask._id,
-          metadata: {
-            from: oldStatus,
-            to: newStatus,
-            source: "linear_sync",
+        // Dedup: skip if same taskId + status_change within 5 min
+        const isDupe = await isDuplicateEvent(ctx.db, existingTask._id, "status_change");
+        if (!isDupe) {
+          await ctx.db.insert("activities", {
+            agent: activityAgentId,
+            action: "updated_task_status",
+            target: existingTask._id,
+            metadata: {
+              from: oldStatus,
+              to: newStatus,
+              source: "linear_sync",
+              linearIdentifier: args.linearIdentifier,
+            },
+            createdAt: now,
+          });
+          // AGT-137: New unified activityEvents schema
+          await ctx.db.insert("activityEvents", {
+            agentId: activityAgentId,
+            agentName: args.agentName.toLowerCase(),
+            category: "task",
+            eventType: "status_change",
+            title: `${args.agentName.toUpperCase()} moved ${args.linearIdentifier} to ${newStatus}`,
+            taskId: existingTask._id,
             linearIdentifier: args.linearIdentifier,
-          },
-          createdAt: now,
-        });
-        // AGT-137: New unified activityEvents schema
-        await ctx.db.insert("activityEvents", {
-          agentId: activityAgentId,
-          agentName: args.agentName.toLowerCase(),
-          category: "task",
-          eventType: "status_change",
-          title: `${args.agentName} moved ${args.linearIdentifier} to ${newStatus}`,
-          taskId: existingTask._id,
-          linearIdentifier: args.linearIdentifier,
-          projectId: existingTask.projectId,
-          metadata: {
-            fromStatus: oldStatus,
-            toStatus: newStatus,
-            source: "linear_sync",
-          },
-          timestamp: now,
-        });
+            projectId: existingTask.projectId,
+            metadata: {
+              fromStatus: oldStatus,
+              toStatus: newStatus,
+              source: "linear_sync",
+            },
+            timestamp: now,
+          });
+        }
       }
 
       return {
@@ -555,7 +585,7 @@ export const upsertByLinearId = mutation({
         agentName: args.agentName.toLowerCase(),
         category: "task",
         eventType: "created",
-        title: `${args.agentName} synced ${args.linearIdentifier}: ${args.title}`,
+        title: `${args.agentName.toUpperCase()} synced ${args.linearIdentifier}: ${args.title}`,
         taskId: taskId,
         linearIdentifier: args.linearIdentifier,
         projectId: args.projectId,
