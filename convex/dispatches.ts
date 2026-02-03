@@ -117,6 +117,42 @@ export const listPending = query({
   },
 });
 
+// List active dispatches (pending + running) for UI display
+export const listActive = query({
+  args: {},
+  handler: async (ctx) => {
+    // Get pending dispatches
+    const pending = await ctx.db
+      .query("dispatches")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .order("asc")
+      .take(20);
+
+    // Get running dispatches
+    const running = await ctx.db
+      .query("dispatches")
+      .withIndex("by_status", (q) => q.eq("status", "running"))
+      .order("asc")
+      .take(10);
+
+    // Combine and sort by createdAt
+    const all = [...running, ...pending].sort((a, b) =>
+      (a.createdAt ?? 0) - (b.createdAt ?? 0)
+    );
+
+    // Enrich with agent names
+    return Promise.all(
+      all.map(async (d) => {
+        const agent = await ctx.db.get(d.agentId);
+        return {
+          ...d,
+          agentName: agent?.name ?? "unknown",
+        };
+      })
+    );
+  },
+});
+
 // List dispatches for a specific agent
 export const listByAgent = query({
   args: {

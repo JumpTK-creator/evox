@@ -24,8 +24,8 @@ const statusConfig: Record<string, { dot: string; text: string }> = {
  * Shows pending and running agent commands
  */
 export function DispatchQueue({ className, collapsed = false, onToggle }: DispatchQueueProps) {
-  // Real-time subscription to pending dispatches
-  const pending = useQuery(api.dispatches.listPending);
+  // Real-time subscription to active dispatches (pending + running)
+  const pending = useQuery(api.dispatches.listActive);
 
   const count = pending?.length ?? 0;
 
