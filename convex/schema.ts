@@ -350,4 +350,20 @@ export default defineSchema({
     createdBy: v.optional(v.id("agents")),
     updatedAt: v.number(),
   }),
+
+  // Phase 5: Execution Engine dispatches
+  dispatches: defineTable({
+    agentId: v.id("agents"),
+    command: v.string(),
+    payload: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("running"), v.literal("completed"), v.literal("failed")),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    result: v.optional(v.string()),
+    error: v.optional(v.string()),
+  })
+    .index("by_status", ["status"])
+    .index("by_agent", ["agentId", "status"])
+    .index("by_created", ["createdAt"]),
 });

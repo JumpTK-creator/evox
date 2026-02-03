@@ -7,6 +7,56 @@ import { internal } from "./_generated/api";
 const http = httpRouter();
 
 // ============================================================
+// STATUS ENDPOINT (Phase 5: OpenClaw Integration)
+// ============================================================
+
+/**
+ * GET /status — System status overview for OpenClaw
+ * Returns: agents, pending dispatches, recent activity
+ */
+http.route({
+  path: "/status",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      // Get all agents
+      const agents = await ctx.runQuery(api.agents.list);
+
+      // Get pending dispatches
+      const pending = await ctx.runQuery(api.dispatches.listPending);
+
+      // Get recent activity (last 10)
+      const recentActivity = await ctx.runQuery(api.activityEvents.list, { limit: 10 });
+
+      return new Response(
+        JSON.stringify({
+          timestamp: Date.now(),
+          agents: agents.map((a: any) => ({
+            name: a.name,
+            role: a.role,
+            status: a.status,
+            currentTask: a.currentTask ?? null,
+          })),
+          pendingDispatches: pending.length,
+          dispatches: pending.slice(0, 5),
+          recentActivity: recentActivity.slice(0, 10),
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      console.error("Status endpoint error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+// ============================================================
 // BOOT CONTEXT ENDPOINT (AGT-160: Context Boot Protocol)
 // ============================================================
 
