@@ -295,7 +295,7 @@ export function ElonDashboard({ className }: ElonDashboardProps) {
       waitingCount: waitingTasks.length,
       blockedCount: blockedTasks.length,
       topBlocker: oldestInProgress ? {
-        id: oldestInProgress.linearIdentifier || oldestInProgress._id.slice(-6),
+        id: oldestInProgress.linearIdentifier ?? "—",
         agent: oldestInProgress.agentName || "—",
         stuckFor: formatDistanceToNow(oldestInProgress.updatedAt, { addSuffix: false }),
       } : null,
