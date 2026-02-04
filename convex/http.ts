@@ -1361,6 +1361,67 @@ http.route({
 });
 
 /**
+ * GET /getNextDispatchForAgent — Get next pending dispatch for specific agent
+ * Query param: agent (sam, leo)
+ */
+http.route({
+  path: "/getNextDispatchForAgent",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const agentParam = url.searchParams.get("agent");
+
+      if (!agentParam) {
+        return new Response(
+          JSON.stringify({ error: "agent param required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const agentName = agentParam.toUpperCase();
+      const pending = await ctx.runQuery(api.dispatches.listPending);
+
+      // Find first dispatch for this agent
+      const dispatch = pending.find((d: any) => d.agentName?.toUpperCase() === agentName);
+
+      if (!dispatch) {
+        return new Response(
+          JSON.stringify({ dispatchId: null, ticket: null }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Parse payload to get ticket info
+      let ticket = null;
+      if (dispatch.payload) {
+        try {
+          const payload = JSON.parse(dispatch.payload);
+          ticket = payload.identifier || payload.ticketId || null;
+        } catch {}
+      }
+
+      return new Response(
+        JSON.stringify({
+          dispatchId: dispatch._id,
+          agentName: dispatch.agentName,
+          command: dispatch.command,
+          ticket,
+          payload: dispatch.payload,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("getNextDispatchForAgent error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
  * POST /markDispatchRunning — Mark dispatch as running (daemon calls this)
  * Query param: dispatchId
  */
