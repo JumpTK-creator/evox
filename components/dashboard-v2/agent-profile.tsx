@@ -71,7 +71,33 @@ export function AgentProfile({
   const currentTaskId = (agent as { currentTask?: Id<"tasks"> } | null)?.currentTask;
   const currentTask = useQuery(api.tasks.get, currentTaskId ? { id: currentTaskId } : "skip");
 
-  // Lazy load tab data - only fetch for active tab (saves Convex bandwidth)
+  // AGT-245: Load metrics data upfront for brutal metrics header
+  // Load always: skills (for tasksCompleted), tasks (for count), messages (for count), notifications (for alerts)
+  const agentSkills = useQuery(api.skills.getByAgent, { agentId });
+  const tasksForAgent = useQuery(api.tasks.getByAssignee, { assignee: agentId, limit: 50 });
+  const messagesForAgent = useQuery(api.agentMessages.listForAgent, { agentId, limit: 30 });
+  const notificationsForAgent = useQuery(api.notifications.getByAgent, { agent: agentId });
+
+  // AGT-245: Brutal metrics - Cost tracking (last 7 days)
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const costData = useQuery(
+    api.costs.getCostsByDateRange,
+    activeTab === "overview" ? { startTs: sevenDaysAgo, endTs: Date.now(), agentName: name.toLowerCase() } : "skip"
+  );
+
+  // AGT-245: Brutal metrics - Execution stats (last 24 hours)
+  const executionSummary = useQuery(
+    api.execution.getExecutionSummary,
+    activeTab === "overview" ? { agentName: name.toLowerCase(), timeRangeMs: 24 * 60 * 60 * 1000 } : "skip"
+  );
+
+  // AGT-245: Brutal metrics - Alert stats (last 7 days)
+  const alertStats = useQuery(
+    api.alerts.getAlertStats,
+    activeTab === "overview" ? { since: sevenDaysAgo } : "skip"
+  );
+
+  // Lazy load tab-specific data
   const soulMemory = useQuery(
     api.agentMemory.getMemory,
     activeTab === "overview" || activeTab === "memory" ? { agentId, type: "soul" } : "skip"
@@ -84,25 +110,9 @@ export function AgentProfile({
     api.agentMemory.listDailyNotes,
     activeTab === "memory" ? { agentId, limit: 10 } : "skip"
   );
-  const agentSkills = useQuery(
-    api.skills.getByAgent,
-    activeTab === "overview" ? { agentId } : "skip"
-  );
-  const tasksForAgent = useQuery(
-    api.tasks.getByAssignee,
-    activeTab === "tasks" ? { assignee: agentId, limit: 50 } : "skip"
-  );
   const activityForAgent = useQuery(
     api.activityEvents.getByAgent,
     activeTab === "activity" ? { agentId, limit: 30 } : "skip"
-  );
-  const messagesForAgent = useQuery(
-    api.agentMessages.listForAgent,
-    activeTab === "messages" ? { agentId, limit: 30 } : "skip"
-  );
-  const notificationsForAgent = useQuery(
-    api.notifications.getByAgent,
-    activeTab === "memory" ? { agent: agentId } : "skip"
   );
   // Remove duplicate agents.list - parent already has this data
   const agentsList = useQuery(api.agents.list);
@@ -173,38 +183,98 @@ export function AgentProfile({
         </div>
       )}
 
-      {/* Identity + Status — compact */}
+      {/* Identity + Brutal Metrics Header — AGT-245 */}
       <div className="shrink-0 border-b border-[#222] px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8 border border-[#222]">
-            <AvatarFallback className="bg-[#111] text-sm text-zinc-50">{avatar}</AvatarFallback>
+        <div className="flex items-center gap-3 mb-3">
+          <Avatar className="h-10 w-10 border border-[#222]">
+            <AvatarFallback className="bg-[#111] text-base text-zinc-50">{avatar}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="text-lg font-semibold text-zinc-50">{name}</p>
-            <p className="text-xs text-zinc-500">{roleLabels[role] ?? role}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xl font-bold text-zinc-50">{name}</p>
+              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full border border-[#0a0a0a] shadow-lg", dot)} />
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{roleLabels[role] ?? role}</p>
           </div>
-          <span className={cn("h-2 w-2 shrink-0 rounded-full border border-[#0a0a0a]", dot)} />
         </div>
-        {statusReason && <p className="mt-1 text-xs italic text-zinc-500">{statusReason}</p>}
-        {statusSince != null && (
-          <p className="text-xs text-[#555]">Since {formatDistanceToNow(statusSince, { addSuffix: true })}</p>
+
+        {/* Brutal Metrics Grid */}
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="rounded border border-[#222] bg-[#111] px-2 py-1.5">
+            <div className="text-2xl font-bold text-zinc-50">{taskCount}</div>
+            <div className="text-[10px] uppercase tracking-wider text-zinc-500">Tasks</div>
+          </div>
+          <div className="rounded border border-[#222] bg-[#111] px-2 py-1.5">
+            <div className="text-2xl font-bold text-zinc-50">{agentSkills?.tasksCompleted ?? 0}</div>
+            <div className="text-[10px] uppercase tracking-wider text-zinc-500">Done</div>
+          </div>
+          <div className="rounded border border-[#222] bg-[#111] px-2 py-1.5">
+            <div className="text-2xl font-bold text-zinc-50">{Array.isArray(messagesForAgent) ? messagesForAgent.length : 0}</div>
+            <div className="text-[10px] uppercase tracking-wider text-zinc-500">Msgs</div>
+          </div>
+          <div className="rounded border border-[#222] bg-[#111] px-2 py-1.5">
+            <div className="text-2xl font-bold text-zinc-50">{notificationCount}</div>
+            <div className="text-[10px] uppercase tracking-wider text-zinc-500">Alerts</div>
+          </div>
+        </div>
+
+        {/* Status Badges */}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          <span className={cn(
+            "rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+            status?.toLowerCase() === "online" ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+            status?.toLowerCase() === "busy" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" :
+            "bg-gray-500/20 text-gray-400 border border-gray-500/30"
+          )}>
+            {status}
+          </span>
+          {statusSince != null && (
+            <span className="rounded bg-[#111] border border-[#222] px-2 py-0.5 text-[10px] text-zinc-500">
+              {formatDistanceToNow(statusSince, { addSuffix: false })}
+            </span>
+          )}
+          {full?.lastHeartbeat != null && (() => {
+            const ageMs = Date.now() - full.lastHeartbeat;
+            const isStale = ageMs >= 5 * 60 * 1000;
+            return isStale ? (
+              <span className="rounded bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                ⚠ Stale
+              </span>
+            ) : null;
+          })()}
+          {agentSkills?.autonomyLevelName && (
+            <span className="rounded bg-[#111] border border-[#222] px-2 py-0.5 text-[10px] text-zinc-500">
+              {agentSkills.autonomyLevelName}
+            </span>
+          )}
+        </div>
+
+        {/* Alerts Section */}
+        {notificationCount > 0 && (
+          <div className="rounded border border-orange-500/30 bg-orange-500/10 px-2 py-1.5 mt-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-orange-400 text-sm">⚡</span>
+              <span className="text-[11px] font-semibold text-orange-300">{notificationCount} pending notification{notificationCount !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
         )}
-        {full?.lastSeen != null && (
-          <p className="text-xs text-[#555]">Last seen {formatDistanceToNow(full.lastSeen, { addSuffix: true })}</p>
+
+        {statusReason && (
+          <p className="mt-2 text-xs italic text-zinc-500 border-l-2 border-zinc-700 pl-2">{statusReason}</p>
         )}
+
         {currentTaskDoc && (
-          <p className="mt-1 text-xs text-zinc-500">
-            Current:{" "}
+          <div className="mt-2 rounded border border-blue-500/30 bg-blue-500/10 px-2 py-1.5">
+            <div className="text-[10px] uppercase tracking-wider text-blue-400 mb-0.5">Current Task</div>
             <a
               href={currentTaskDoc.linearUrl ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[#888] hover:text-zinc-400"
+              className="text-xs text-blue-300 hover:text-blue-200 font-medium"
             >
-              {currentTaskDoc.linearIdentifier ?? "—"}
-            </a>{" "}
-            {currentTaskDoc.title ?? ""}
-          </p>
+              {currentTaskDoc.linearIdentifier ?? "—"} {currentTaskDoc.title ?? ""}
+            </a>
+          </div>
         )}
       </div>
 
@@ -233,12 +303,47 @@ export function AgentProfile({
       <div className="flex-1 overflow-y-auto p-4 min-h-0">
         {activeTab === "overview" && (
           <div className="space-y-4">
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-[0.05em] text-zinc-500">SOUL</h4>
-              <div className="mt-2 text-sm text-zinc-500 whitespace-pre-wrap">
-                {soulContent}
+            {/* Performance Metrics — AGT-245 */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded border border-[#222] bg-[#0a0a0a] p-3">
+                <div className="text-3xl font-bold text-zinc-50">{agentSkills?.tasksCompleted ?? 0}</div>
+                <div className="text-xs uppercase tracking-wider text-zinc-500 mt-1">Tasks Completed</div>
+              </div>
+              <div className="rounded border border-[#222] bg-[#0a0a0a] p-3">
+                <div className="text-3xl font-bold text-zinc-50">{taskCount}</div>
+                <div className="text-xs uppercase tracking-wider text-zinc-500 mt-1">Active Tasks</div>
               </div>
             </div>
+
+            {/* Heartbeat Status */}
+            {full?.lastHeartbeat != null && (
+              <div className="rounded border border-[#222] bg-[#0a0a0a] p-3">
+                <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Heartbeat</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-lg font-semibold text-zinc-50">
+                      {(() => {
+                        const ageMs = Date.now() - full.lastHeartbeat;
+                        if (ageMs < 5 * 60 * 1000) return "Healthy";
+                        if (ageMs < 15 * 60 * 1000) return "Stale";
+                        return "Offline";
+                      })()}
+                    </div>
+                    <div className="text-xs text-zinc-500">{formatDistanceToNow(full.lastHeartbeat, { addSuffix: true })}</div>
+                  </div>
+                  <div className={cn(
+                    "h-4 w-4 rounded-full",
+                    (() => {
+                      const ageMs = Date.now() - full.lastHeartbeat;
+                      if (ageMs < 5 * 60 * 1000) return "bg-green-500";
+                      if (ageMs < 15 * 60 * 1000) return "bg-yellow-500";
+                      return "bg-gray-500";
+                    })()
+                  )} />
+                </div>
+              </div>
+            )}
+
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-[0.05em] text-zinc-500">Skills</h4>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -258,11 +363,13 @@ export function AgentProfile({
                 )}
               </div>
             </div>
-            {agentSkills && (
-              <p className="text-sm text-zinc-500">
-                {agentSkills.autonomyLevelName ?? "—"} · {agentSkills.tasksCompleted ?? 0} completed
-              </p>
-            )}
+
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-[0.05em] text-zinc-500">SOUL</h4>
+              <div className="mt-2 text-sm text-zinc-500 whitespace-pre-wrap border-l-2 border-zinc-800 pl-3">
+                {soulContent}
+              </div>
+            </div>
           </div>
         )}
 

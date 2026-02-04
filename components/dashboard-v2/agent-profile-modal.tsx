@@ -62,18 +62,18 @@ export function AgentProfileModal({
         className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-xl border border-white/[0.08] bg-[#1a1a2e] shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header: Agent emoji + name + role + status */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-3">
+        {/* Header: Agent emoji + name + role + status — AGT-245 Brutal */}
+        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-3 bg-[#0a0a0a]">
           <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8 border border-white/[0.08]">
-              <AvatarFallback className="bg-[#111] text-sm text-zinc-50">{avatar}</AvatarFallback>
+            <Avatar className="h-10 w-10 border border-white/[0.08]">
+              <AvatarFallback className="bg-[#111] text-base font-bold text-zinc-50">{avatar}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-lg font-semibold text-zinc-50">{name}</p>
-                <span className={cn("h-2 w-2 shrink-0 rounded-full", dot)} aria-hidden />
+                <p className="text-xl font-bold text-zinc-50">{name}</p>
+                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full shadow-lg", dot)} aria-hidden />
               </div>
-              <p className="text-xs text-zinc-400">{roleLabels[role] ?? role}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{roleLabels[role] ?? role}</p>
             </div>
           </div>
           <button
