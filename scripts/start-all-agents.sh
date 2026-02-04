@@ -26,7 +26,12 @@ sleep 1
 echo "Starting agents in background..."
 echo ""
 
-# Start agents in background with nohup
+# Load environment variables
+if [ -f ".env.local" ]; then
+  export $(grep -v '^#' .env.local | xargs)
+fi
+
+# Start agents in background with nohup (inherits env)
 nohup ./scripts/agent-loop.sh sam > logs/sam.log 2>&1 &
 echo "  ✅ SAM  — Backend (PID: $!)"
 
