@@ -76,13 +76,10 @@ export const killSwitch = mutation({
       category: "system",
       eventType: "kill_switch_activated",
       title: `KILL SWITCH ACTIVATED: ${reason}`,
-      description: `All agents set to offline. ${pendingDispatches.length} dispatches cancelled.`,
+      description: `All agents set to offline. ${pendingDispatches.length} dispatches cancelled. Paused by: ${pausedBy ?? "system"}.`,
       metadata: {
         source: "kill_switch",
-        reason,
-        pausedBy,
-        agentsStopped: agents.length,
-        dispatchesCancelled: pendingDispatches.length,
+        errorMessage: reason,
       },
       timestamp: now,
     });
@@ -142,11 +139,9 @@ export const resumeSystem = mutation({
       category: "system",
       eventType: "system_resumed",
       title: "System resumed",
-      description: `All agents set to idle. Paused for ${Math.round((now - (existing.pausedAt ?? now)) / 1000 / 60)} minutes.`,
+      description: `All agents set to idle. Paused for ${Math.round((now - (existing.pausedAt ?? now)) / 1000 / 60)} minutes. Resumed by: ${resumedBy ?? "system"}.`,
       metadata: {
         source: "kill_switch",
-        resumedBy,
-        pauseDuration: now - (existing.pausedAt ?? now),
       },
       timestamp: now,
     });

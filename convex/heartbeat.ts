@@ -1,5 +1,6 @@
 /**
  * AGT-119: Agent Heartbeat System
+ * AGT-192/194: Heartbeat Protocol Documentation
  *
  * 15-minute staggered heartbeats per agent:
  * - Check WORKING.md for pending context
@@ -10,7 +11,7 @@
  * - Emit activityEvent on each heartbeat
  */
 import { v } from "convex/values";
-import { internalMutation, internalAction } from "./_generated/server";
+import { internalMutation, internalAction, query } from "./_generated/server";
 import { internal, api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
@@ -178,5 +179,141 @@ export const heartbeatLeo = internalAction({
   args: {},
   handler: async (ctx): Promise<HeartbeatResult> => {
     return await ctx.runAction(internal.heartbeat.checkAgent, { agentName: "leo" });
+  },
+});
+
+/**
+ * AGT-192: Get all context needed for heartbeat check
+ * Returns: agent info, SOUL, WORKING, unread messages, pending tasks
+ */
+export const getHeartbeatContext = query({
+  args: {
+    agentName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const normalizedName = args.agentName.toUpperCase();
+
+    // Get agent
+    const agent = await ctx.db
+      .query("agents")
+      .withIndex("by_name", (q) => q.eq("name", normalizedName))
+      .first();
+
+    if (!agent) {
+      return { error: `Agent ${args.agentName} not found` };
+    }
+
+    // Get SOUL.md
+    const soulMemory = await ctx.db
+      .query("agentMemory")
+      .withIndex("by_agent_type", (q) =>
+        q.eq("agentId", agent._id).eq("type", "soul")
+      )
+      .first();
+
+    // Get WORKING.md
+    const workingMemory = await ctx.db
+      .query("agentMemory")
+      .withIndex("by_agent_type", (q) =>
+        q.eq("agentId", agent._id).eq("type", "working")
+      )
+      .first();
+
+    // Get unread messages
+    const unreadMessages = await ctx.db
+      .query("agentMessages")
+      .withIndex("by_to_status", (q) =>
+        q.eq("to", agent._id).eq("status", "unread")
+      )
+      .collect();
+
+    // Get pending tasks (todo or in_progress)
+    const allTasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_assignee", (q) => q.eq("assignee", agent._id))
+      .collect();
+
+    const pendingTasks = allTasks.filter(
+      (t) => t.status === "todo" || t.status === "in_progress"
+    );
+    const todoTasks = allTasks.filter((t) => t.status === "todo");
+    const inProgressTasks = allTasks.filter((t) => t.status === "in_progress");
+
+    // Check for blockers in WORKING.md
+    const hasBlocker = workingMemory?.content?.toLowerCase().includes("blocked") ?? false;
+    const hasPendingReview = workingMemory?.content?.toLowerCase().includes("pending review") ?? false;
+
+    return {
+      agent: {
+        id: agent._id,
+        name: agent.name,
+        status: agent.status,
+        lastHeartbeat: agent.lastHeartbeat,
+        lastSeen: agent.lastSeen,
+      },
+      memory: {
+        soul: soulMemory?.content ?? null,
+        working: workingMemory?.content ?? null,
+      },
+      inbox: {
+        unreadCount: unreadMessages.length,
+        messages: unreadMessages.slice(0, 5).map((m) => ({
+          type: m.type,
+          content: m.content.slice(0, 100),
+          timestamp: m.timestamp,
+        })),
+      },
+      tasks: {
+        pendingCount: pendingTasks.length,
+        todoCount: todoTasks.length,
+        inProgressCount: inProgressTasks.length,
+        todo: todoTasks.slice(0, 5).map((t) => ({
+          id: t._id,
+          title: t.title,
+          linearIdentifier: t.linearIdentifier,
+          priority: t.priority,
+        })),
+        inProgress: inProgressTasks.slice(0, 3).map((t) => ({
+          id: t._id,
+          title: t.title,
+          linearIdentifier: t.linearIdentifier,
+        })),
+      },
+      flags: {
+        hasBlocker,
+        hasPendingReview,
+        hasPendingWork: unreadMessages.length > 0 || todoTasks.length > 0 || hasBlocker,
+      },
+    };
+  },
+});
+
+/**
+ * AGT-194: Get heartbeat protocol documentation
+ */
+export const getHeartbeatProtocol = query({
+  handler: async (ctx) => {
+    // Protocol stored under MAX's agent memory
+    const maxAgent = await ctx.db
+      .query("agents")
+      .withIndex("by_name", (q) => q.eq("name", "MAX"))
+      .first();
+
+    if (!maxAgent) {
+      return { content: null };
+    }
+
+    const protocol = await ctx.db
+      .query("agentMemory")
+      .withIndex("by_agent_type", (q) =>
+        q.eq("agentId", maxAgent._id).eq("type", "heartbeat_protocol")
+      )
+      .first();
+
+    return {
+      content: protocol?.content ?? null,
+      version: protocol?.version ?? 0,
+      updatedAt: protocol?.updatedAt ?? null,
+    };
   },
 });

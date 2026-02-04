@@ -93,7 +93,6 @@ export const approveTask = mutation({
       projectId: task.projectId,
       metadata: {
         source: "approval_workflow",
-        comment,
       },
       timestamp: now,
     });
@@ -148,7 +147,7 @@ export const rejectTask = mutation({
       projectId: task.projectId,
       metadata: {
         source: "approval_workflow",
-        reason,
+        errorMessage: reason,
       },
       timestamp: now,
     });

@@ -342,12 +342,14 @@ export default defineSchema({
 
   // Agent persistent memory (ADR-002: Hierarchical Memory Architecture)
   // AGT-107: SOUL.md per agent, AGT-109: WORKING.md per agent, AGT-110: Daily notes
+  // AGT-194: heartbeat_protocol - system-wide protocol (stored under MAX)
   agentMemory: defineTable({
     agentId: v.id("agents"),
     type: v.union(
-      v.literal("soul"),    // SOUL.md - identity, role, expertise (rarely updated)
-      v.literal("working"), // WORKING.md - current context (updated every session)
-      v.literal("daily")    // Daily notes - standup summaries (rotates daily)
+      v.literal("soul"),              // SOUL.md - identity, role, expertise (rarely updated)
+      v.literal("working"),           // WORKING.md - current context (updated every session)
+      v.literal("daily"),             // Daily notes - standup summaries (rotates daily)
+      v.literal("heartbeat_protocol") // AGT-194: Heartbeat protocol documentation
     ),
     content: v.string(),
     date: v.optional(v.string()), // For daily notes: YYYY-MM-DD

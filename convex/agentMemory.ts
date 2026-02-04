@@ -5,7 +5,7 @@ import { mutation, query } from "./_generated/server";
 export const getMemory = query({
   args: {
     agentId: v.id("agents"),
-    type: v.union(v.literal("soul"), v.literal("working"), v.literal("daily")),
+    type: v.union(v.literal("soul"), v.literal("working"), v.literal("daily"), v.literal("heartbeat_protocol")),
     date: v.optional(v.string()), // Required for daily notes
   },
   handler: async (ctx, args) => {
@@ -134,7 +134,7 @@ export const upsertWorkingByAgentName = mutation({
 export const upsertMemory = mutation({
   args: {
     agentId: v.id("agents"),
-    type: v.union(v.literal("soul"), v.literal("working"), v.literal("daily")),
+    type: v.union(v.literal("soul"), v.literal("working"), v.literal("daily"), v.literal("heartbeat_protocol")),
     content: v.string(),
     date: v.optional(v.string()),
     expectedVersion: v.optional(v.number()),
@@ -217,6 +217,122 @@ export const archiveDailyNotes = mutation({
     }
 
     return { archived: oldNotes.length, cutoffDate };
+  },
+});
+
+// AGT-194: Seed heartbeat protocol documentation
+export const seedHeartbeatProtocol = mutation({
+  handler: async (ctx) => {
+    // Get MAX agent (PM owns system protocols)
+    const maxAgent = await ctx.db
+      .query("agents")
+      .withIndex("by_name", (q) => q.eq("name", "MAX"))
+      .first();
+
+    if (!maxAgent) {
+      return { success: false, error: "MAX agent not found" };
+    }
+
+    // Check if protocol already exists
+    const existing = await ctx.db
+      .query("agentMemory")
+      .withIndex("by_agent_type", (q) =>
+        q.eq("agentId", maxAgent._id).eq("type", "heartbeat_protocol")
+      )
+      .first();
+
+    const now = Date.now();
+    const protocolContent = `# Agent Heartbeat Protocol
+
+> Standard wake-up routine for all EVOX agents.
+> Runs every 15 minutes (staggered: MAX :00, SAM :05, LEO :10)
+
+---
+
+## On Wake Checklist
+
+### 1. Load Context (5s)
+- [ ] Read \`CLAUDE.md\` — Project rules
+- [ ] Read own \`SOUL.md\` — Identity, role, expertise
+- [ ] Read own \`WORKING.md\` — Current state, last session context
+
+### 2. Check Inbox (5s)
+- [ ] Query unread @mentions
+- [ ] Query unread DMs
+- [ ] Check notifications for updates
+
+### 3. Check Task Queue (5s)
+- [ ] Query tasks assigned to me
+- [ ] Filter: \`status = todo OR status = in_progress\`
+- [ ] If blocked task — escalate to Max
+
+### 4. Decide Action
+| Condition | Action |
+|-----------|--------|
+| Unread @mention | Respond to mention |
+| Assigned task (todo) | Start working on task |
+| Assigned task (in_progress) | Continue working |
+| Blocked task | Escalate to Max, log blocker |
+| Nothing pending | Log \`HEARTBEAT_OK\` |
+
+### 5. Report
+- Update \`WORKING.md\` with current status
+- Log activity to daily notes
+- Emit heartbeat event
+
+---
+
+## Heartbeat Status Codes
+
+| Status | Meaning |
+|--------|---------|
+| \`ok\` | No pending work, agent idle |
+| \`pending_work\` | Has unread mentions or unstarted tasks |
+| \`working\` | Actively working on a task |
+| \`blocked\` | Task blocked, needs escalation |
+
+---
+
+## Health Indicators (Dashboard)
+
+| Indicator | Threshold | Color |
+|-----------|-----------|-------|
+| Healthy | Last heartbeat < 5 min | Green |
+| Warning | Last heartbeat 5-15 min | Yellow |
+| Critical | Last heartbeat > 15 min | Red |
+| Offline | Last heartbeat > 30 min | Gray |
+
+---
+
+## Escalation Rules
+
+1. **3 consecutive \`pending_work\`** — Notify PM
+2. **Task blocked > 1 hour** — Auto-escalate to Max
+3. **No heartbeat > 30 min** — Mark agent offline
+
+---
+
+_Protocol version: 1.0_`;
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        content: protocolContent,
+        updatedAt: now,
+        version: existing.version + 1,
+      });
+      return { success: true, id: existing._id, updated: true };
+    }
+
+    const id = await ctx.db.insert("agentMemory", {
+      agentId: maxAgent._id,
+      type: "heartbeat_protocol",
+      content: protocolContent,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+    });
+
+    return { success: true, id, created: true };
   },
 });
 

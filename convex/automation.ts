@@ -209,7 +209,6 @@ export const autoDispatchForAgent = mutation({
       projectId: task.projectId,
       metadata: {
         source: "auto_dispatch",
-        priority: task.priority,
       },
       timestamp: now,
     });
@@ -388,8 +387,7 @@ export const handleTaskFailure = mutation({
         projectId: task.projectId,
         metadata: {
           source: "self_healing",
-          retryCount: newRetryCount,
-          error,
+          errorMessage: error,
         },
         timestamp: now,
       });
@@ -456,8 +454,7 @@ export const handleTaskFailure = mutation({
         projectId: task.projectId,
         metadata: {
           source: "self_healing",
-          retryCount: newRetryCount,
-          error,
+          errorMessage: error,
         },
         timestamp: now,
       });

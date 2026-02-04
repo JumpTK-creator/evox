@@ -154,8 +154,6 @@ export const enforceRateLimit = mutation({
           title: `${agentName.toUpperCase()} rate limited (${hourlyTasks}/${rateLimit.hourlyTaskLimit} tasks/hour)`,
           metadata: {
             source: "rate_limit",
-            current: hourlyTasks,
-            limit: rateLimit.hourlyTaskLimit,
           },
           timestamp: now,
         });
