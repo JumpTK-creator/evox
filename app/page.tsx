@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -31,9 +30,6 @@ import { CEODashboard } from "@/components/evox/CEODashboard";
 import type { KanbanTask } from "@/components/dashboard-v2/task-card";
 import type { DateFilterMode } from "@/components/dashboard-v2/date-filter";
 
-// Demo mode redirect check
-const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-
 /** Agent order: MAX → SAM → LEO */
 const AGENT_ORDER = ["max", "sam", "leo"];
 function sortAgents<T extends { name: string }>(list: T[]): T[] {
@@ -49,7 +45,6 @@ function sortAgents<T extends { name: string }>(list: T[]): T[] {
 
 /** AGT-181: 2-panel layout — [Sidebar 220px] | [Kanban flex-1]. Agent Profile → Modal, Activity → Drawer */
 export default function Home() {
-  const router = useRouter();
   const [date, setDate] = useState(new Date());
   const [dateMode, setDateMode] = useState<DateFilterMode>("day");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -61,13 +56,6 @@ export default function Home() {
   const [agentSettingsId, setAgentSettingsId] = useState<Id<"agents"> | null>(null);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [activeViewTab, setActiveViewTab] = useState<MainViewTab>("kanban");
-
-  // Demo mode: redirect to /live (read-only view)
-  useEffect(() => {
-    if (isDemoMode) {
-      router.replace("/live");
-    }
-  }, [router]);
 
   const agents = useQuery(api.agents.list);
 
