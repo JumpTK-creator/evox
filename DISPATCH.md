@@ -1,18 +1,38 @@
 # Agent Dispatch Queue
 
-## Sam (Backend) — Next Tasks
-1. ~~AGT-77: Linear API sync → Convex~~ ✓ DONE (44277da)
-2. ~~AGT-72: @mention parsing - backend~~ ✓ DONE (44277da)
-3. **AGT-156:** (current) — Leo chờ Sam xong rồi mới bắt AGT-155
+*Updated: Feb 3, 2026 — Session 15*
 
-**STATUS: Sam làm AGT-156 trước.**
+---
 
-## Leo (Frontend) — Next Tasks
-1. **AGT-155:** (sau khi Sam xong AGT-156)
-2. AGT-70: Task Detail Page (IN PROGRESS)
-3. AGT-71: Message Thread (IN PROGRESS)
-4. AGT-73: Notification bell UI (P: Medium)
-5. AGT-76: Agent card live status (P: Medium)
-# Webhook test 1770009821
-# Test webhook Sun Feb  1 21:26:32 PST 2026
-## Test webhook Sun Feb  1 21:34:09 PST 2026
+## Sam (Backend) — Phase 8: Hands-Off Operation
+
+| Priority | Ticket | Task | Status |
+|----------|--------|------|--------|
+| 1 | **AGT-215** | Alert System — Push notifications for agent events | TODO |
+| 2 | AGT-216 | Auto-Recovery — Self-healing restart & retry | TODO |
+| 3 | AGT-214 | Cron Scheduler — Schedule agent tasks | TODO |
+
+**Instructions:** Start with AGT-215 (Alert System). Telegram integration first.
+
+---
+
+## Leo (Frontend) — Phase 8
+
+| Priority | Ticket | Task | Status |
+|----------|--------|------|--------|
+| 1 | **AGT-217** | Health Dashboard — Uptime, success rate, error trends | TODO |
+
+**Instructions:** Wait for Sam to complete AGT-215/216 backend first. Then build Health Dashboard UI.
+
+**Dependency:** AGT-217 blocked by AGT-215, AGT-216
+
+---
+
+## Completed (Phase 6-7)
+- ✓ AGT-212: Kill Switch (Sam + Leo)
+- ✓ AGT-211: Rate Limiting (Sam)
+- ✓ AGT-210: Self-Healing Retry (Sam)
+- ✓ AGT-209: Approval Workflow (Sam)
+- ✓ AGT-208: Auto-Dispatch (Sam)
+- ✓ AGT-206: View Tabs (Leo)
+- ✓ AGT-204: Heartbeat Panel (Leo)
