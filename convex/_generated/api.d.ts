@@ -30,6 +30,7 @@ import type * as heartbeat from "../heartbeat.js";
 import type * as http from "../http.js";
 import type * as learnings from "../learnings.js";
 import type * as linearSync from "../linearSync.js";
+import type * as maxMonitor from "../maxMonitor.js";
 import type * as mentions from "../mentions.js";
 import type * as messages from "../messages.js";
 import type * as messaging from "../messaging.js";
@@ -78,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   learnings: typeof learnings;
   linearSync: typeof linearSync;
+  maxMonitor: typeof maxMonitor;
   mentions: typeof mentions;
   messages: typeof messages;
   messaging: typeof messaging;

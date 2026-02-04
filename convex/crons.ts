@@ -75,4 +75,15 @@ crons.interval(
   {}
 );
 
+// AGT-223: Max Autonomous Monitor
+// Background monitoring, self-check, agent sync, inter-agent coordination
+// Checks: agent health, task progress, stuck tasks, errors
+// Alerts Son on Telegram if critical issues
+crons.interval(
+  "max-monitor",
+  { minutes: 15 },
+  internal.maxMonitor.check,
+  {}
+);
+
 export default crons;
