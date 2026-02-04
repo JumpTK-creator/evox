@@ -25,9 +25,6 @@ export function DMInput({
   const [content, setContent] = useState("");
   const [type, setType] = useState<"handoff" | "update" | "request" | "fyi">("fyi");
 
-  // AGT-230: Don't render input in demo mode
-  if (isViewerMode) return null;
-
   const handleSend = useCallback(() => {
     const trimmed = content.trim();
     if (!trimmed) return;
@@ -35,12 +32,15 @@ export function DMInput({
     setContent("");
   }, [content, type, onSend]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  };
+  }, [handleSend]);
+
+  // AGT-230: Don't render input in demo mode (after all hooks)
+  if (isViewerMode) return null;
 
   return (
     <div className={cn("border-t border-[#222] p-3 bg-[#0d0d0d]", className)}>
