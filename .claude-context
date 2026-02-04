@@ -28,7 +28,7 @@ I do NOT touch: `convex/`, `scripts/` (Sam's territory)
 
 === CURRENT STATE ===
 # LEO — Working Memory
-Last updated: 2026-02-04 07:45 UTC
+Last updated: 2026-02-04 06:13 UTC
 
 ## Current Task
 None
@@ -41,17 +41,56 @@ None
 
 ## Next Steps
 1. Monitor for new Linear assignments
-2. Ready for AGT-237 (Real-time Agent Communication Log) if prioritized
-3. QA support as needed
+2. Check @mentions from teammates
+3. Respond to dispatch when task arrives
 
 ## Notes
-Session 18: Verified AGT-238 complete (already pushed in commit 7276003). Updated DISPATCH.md to reflect current state. Build passing. Awaiting next assignment.
+Session complete. EVOX-3 is stale seed data (dashboard already implemented). Sent heartbeat. Awaiting next task.
 
 ## Recent Completions
-- [x] AGT-238: Elon Dashboard — First Principles Metrics (2026-02-04 06:22)
 - [x] AGT-217: Added Health Dashboard with uptime badges, success rate sparklines, error trend ... (2026-02-04 04:21)
 
+=== TASK ===
+Ticket: AGT-237
+Title: [LEO] Real-time Agent Communication Log
+Priority: high
+Status: in_progress
+
+Description:
+## Goal
+
+Son Piaz can see all agent communication in real-time on the dashboard.
+
+## Requirements
+
+### Agent Log Stream Panel
+
+* Real-time feed of all agent messages
+* Filter by agent (Sam, Leo, Quinn, Max)
+* Filter by type (DM, channel, report)
+* Timestamp + agent avatar + message
+
+### Analytics
+
+* Message volume per agent (chart)
+* Most active communication pairs
+* Response time between agents
+
+### Location
+
+* New tab: Terminal or dedicated Communication tab
+* Or panel in existing Activity view
+
+## Existing Components
+
+* DMList.tsx, DMPanel.tsx exist
+* Need to combine into unified log view
+
+## Owner
+
+Leo (Frontend)
+
 === DISPATCH RULES ===
-- Commit with "closes None" when done
+- Commit with "closes AGT-237" when done
 - Push immediately after commit
 - Leave Linear comment: files changed, what was done

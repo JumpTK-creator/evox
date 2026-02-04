@@ -1,11 +1,10 @@
 #!/bin/bash
-# agent-loop.sh — Run agent in continuous loop (same session)
+# agent-loop.sh — 100x Autonomous Agent Loop (AGT-251)
 #
 # Usage: ./scripts/agent-loop.sh <agent>
-# Example: ./scripts/agent-loop.sh sam
 #
-# Agent works on tasks continuously until queue is empty.
-# Includes: Lock file (prevent duplicates), Heartbeat updates
+# NEW: Direct Linear polling — no dispatch queue needed!
+# Agent grabs highest priority unassigned ticket matching their role.
 
 set -e
 
@@ -15,152 +14,172 @@ if [ -z "$AGENT" ]; then
   exit 1
 fi
 
-AGENT=$(echo "$AGENT" | tr '[:upper:]' '[:lower:]')
+AGENT_LOWER=$(echo "$AGENT" | tr '[:upper:]' '[:lower:]')
+AGENT_UPPER=$(echo "$AGENT" | tr '[:lower:]' '[:upper:]')
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CONVEX_URL="https://gregarious-elk-556.convex.site"
-LOCK_FILE="$PROJECT_DIR/.lock-$AGENT"
+LINEAR_API="https://api.linear.app/graphql"
+LOCK_FILE="$PROJECT_DIR/.lock-$AGENT_LOWER"
 
 cd "$PROJECT_DIR"
+
+# === Agent Role Mapping ===
+case "$AGENT_LOWER" in
+  sam) ROLE="backend"; KEYWORDS="SAM|Backend|convex|api|schema" ;;
+  leo) ROLE="frontend"; KEYWORDS="LEO|Frontend|UI|component|dashboard" ;;
+  max) ROLE="pm"; KEYWORDS="MAX|PM|planning|coordination" ;;
+  quinn) ROLE="qa"; KEYWORDS="QUINN|QA|test|bug" ;;
+  *) ROLE="general"; KEYWORDS="." ;;
+esac
 
 # === LOCK: Prevent duplicate processes ===
 if [ -f "$LOCK_FILE" ]; then
   OLD_PID=$(cat "$LOCK_FILE")
   if ps -p "$OLD_PID" > /dev/null 2>&1; then
     echo "ERROR: $AGENT already running (PID $OLD_PID)"
-    echo "Kill it first: kill $OLD_PID"
     exit 1
-  else
-    echo "Stale lock file found, removing..."
-    rm -f "$LOCK_FILE"
   fi
+  rm -f "$LOCK_FILE"
 fi
-
 echo $$ > "$LOCK_FILE"
 
-# === HEARTBEAT FUNCTION ===
+# === HEARTBEAT ===
 send_heartbeat() {
-  local status="$1"
-  local task="$2"
   curl -s -X POST "$CONVEX_URL/api/heartbeat" \
     -H "Content-Type: application/json" \
-    -d "{\"agentName\":\"$AGENT\",\"status\":\"$status\",\"statusReason\":\"$task\"}" > /dev/null 2>&1 || true
+    -d "{\"agentName\":\"$AGENT_LOWER\",\"status\":\"$1\",\"statusReason\":\"$2\"}" > /dev/null 2>&1 || true
 }
 
-# === SESSION END LOG ===
+# === CLEANUP ON EXIT ===
 CURRENT_TICKET="none"
-log_session_end() {
+cleanup() {
   echo ""
-  echo "=== Session Ending (signal received) ==="
-  send_heartbeat "offline" "session_killed"
-
-  # Log to Convex learnings
-  curl -s -X POST "$CONVEX_URL/v2/learn" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"agent\": \"$AGENT\",
-      \"taskId\": \"$CURRENT_TICKET\",
-      \"taskTitle\": \"Session Terminated\",
-      \"summary\": \"Session killed during task: $CURRENT_TICKET. PID: $$. Time: $(date)\",
-      \"tags\": [\"session-end\", \"killed\"]
-    }" > /dev/null 2>&1 || true
-
-  echo "Session logged to Convex."
+  echo "=== Agent $AGENT_UPPER shutting down ==="
+  send_heartbeat "offline" "shutdown"
   rm -f "$LOCK_FILE"
 }
+trap cleanup EXIT SIGINT SIGTERM
 
-# Trap exit signals to log before dying
-trap 'log_session_end' EXIT SIGINT SIGTERM
-
-echo "=== $AGENT Agent Loop Starting (PID $$) ==="
-send_heartbeat "starting" "none"
+echo "╔════════════════════════════════════════════════╗"
+echo "║  $AGENT_UPPER Agent — 100x Autonomous Mode     ║"
+echo "║  Direct Linear Polling • No Dispatch Queue    ║"
+echo "╚════════════════════════════════════════════════╝"
 echo ""
+send_heartbeat "starting" "boot"
 
-# AGT-247: Event subscription — track last event timestamp
-LAST_EVENT_TS=0
-
+# === MAIN LOOP ===
 while true; do
-  # AGT-247: Check for new events via event bus (real-time notifications)
-  EVENT_RESPONSE=$(curl -s "$CONVEX_URL/api/events/subscribe?agent=$AGENT&since=$LAST_EVENT_TS")
-  EVENT_COUNT=$(echo "$EVENT_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d.get('events',[])))" 2>/dev/null)
+  send_heartbeat "polling" "looking_for_work"
 
-  if [ -n "$EVENT_COUNT" ] && [ "$EVENT_COUNT" -gt 0 ]; then
-    echo "=== Received $EVENT_COUNT event(s) ==="
-    # Update last event timestamp
-    LAST_EVENT_TS=$(echo "$EVENT_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('timestamp',0))" 2>/dev/null)
+  # === 1. Check dispatch queue first (backward compatible) ===
+  RESPONSE=$(curl -s "$CONVEX_URL/getNextDispatchForAgent?agent=$AGENT_LOWER" 2>/dev/null || echo "{}")
+  DISPATCH_ID=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('dispatchId',''))" 2>/dev/null || echo "")
+  TICKET=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('ticket',''))" 2>/dev/null || echo "")
 
-    # Acknowledge events
-    echo "$EVENT_RESPONSE" | python3 -c "
-import json, sys, subprocess
-data = json.load(sys.stdin)
-for event in data.get('events', []):
-    event_id = event.get('id')
-    if event_id:
-        subprocess.run(['curl', '-s', '-X', 'POST', '$CONVEX_URL/api/events/ack',
-                       '-H', 'Content-Type: application/json',
-                       '-d', json.dumps({'eventId': event_id})],
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-" 2>/dev/null
+  # === 2. If no dispatch, poll Linear directly ===
+  if [ -z "$TICKET" ] || [ "$TICKET" = "null" ] || [ "$TICKET" = "" ]; then
+    echo "No dispatch. Polling Linear directly..."
+
+    # Query Linear for unassigned backlog tickets matching agent role
+    LINEAR_QUERY='{"query":"{ issues(filter: { state: { type: { in: [\"backlog\", \"unstarted\"] } }, assignee: { null: true } }, first: 10, orderBy: priority) { nodes { identifier title priority state { name } labels { nodes { name } } } } }"}'
+
+    LINEAR_RESPONSE=$(curl -s -X POST "$LINEAR_API" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: $LINEAR_API_KEY" \
+      -d "$LINEAR_QUERY" 2>/dev/null || echo "{}")
+
+    # Find ticket matching agent's keywords
+    TICKET=$(echo "$LINEAR_RESPONSE" | python3 -c "
+import json, sys, re
+try:
+    data = json.load(sys.stdin)
+    issues = data.get('data', {}).get('issues', {}).get('nodes', [])
+    keywords = '$KEYWORDS'
+    for issue in issues:
+        title = issue.get('title', '')
+        labels = ' '.join([l.get('name','') for l in issue.get('labels',{}).get('nodes',[])])
+        if re.search(keywords, title + ' ' + labels, re.IGNORECASE):
+            print(issue.get('identifier', ''))
+            break
+    else:
+        # No keyword match, take first available if agent is general
+        if '$ROLE' == 'general' and issues:
+            print(issues[0].get('identifier', ''))
+except:
+    pass
+" 2>/dev/null || echo "")
+
+    DISPATCH_ID=""  # No dispatch for direct Linear grab
   fi
 
-  # Get next dispatch for this specific agent
-  RESPONSE=$(curl -s "$CONVEX_URL/getNextDispatchForAgent?agent=$AGENT")
-
-  DISPATCH_ID=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('dispatchId',''))" 2>/dev/null)
-  TICKET=$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('ticket',''))" 2>/dev/null)
-
-  # Check if we got a task
-  if [ -z "$DISPATCH_ID" ] || [ "$DISPATCH_ID" = "null" ] || [ -z "$TICKET" ] || [ "$TICKET" = "null" ]; then
-    send_heartbeat "idle" "none"
-    # AGT-247: Reduced polling interval from 60s to 10s (events provide instant notification)
-    echo "No tasks for $AGENT. Checking again in 10s..."
-    sleep 10
+  # === 3. No work found ===
+  if [ -z "$TICKET" ] || [ "$TICKET" = "null" ] || [ "$TICKET" = "" ]; then
+    send_heartbeat "idle" "no_work"
+    echo "$(date '+%H:%M:%S') — No work for $AGENT_UPPER. Sleeping 30s..."
+    sleep 30
     continue
   fi
 
-  echo "=== Task: $TICKET ==="
+  # === 4. WORK ON TICKET ===
+  echo ""
+  echo "╔════════════════════════════════════════════════╗"
+  echo "║  TASK: $TICKET"
+  echo "╚════════════════════════════════════════════════╝"
   CURRENT_TICKET="$TICKET"
   send_heartbeat "working" "$TICKET"
 
-  # Mark dispatch as running
-  curl -s "$CONVEX_URL/markDispatchRunning?dispatchId=$DISPATCH_ID" > /dev/null
+  # Mark dispatch running if we have one
+  if [ -n "$DISPATCH_ID" ] && [ "$DISPATCH_ID" != "null" ]; then
+    curl -s "$CONVEX_URL/markDispatchRunning?dispatchId=$DISPATCH_ID" > /dev/null 2>&1 || true
+  fi
 
-  # Boot agent with context
-  ./scripts/boot.sh "$AGENT" "$TICKET"
+  # Boot agent context
+  ./scripts/boot.sh "$AGENT_LOWER" "$TICKET"
 
-  # Build prompt
-  PROMPT="You are $AGENT.
-Read your context file (.claude-context or .cursorrules).
-Your task: $TICKET
+  # === 5. BUILD PROMPT ===
+  PROMPT="You are $AGENT_UPPER — EVOX $ROLE engineer. Work AUTONOMOUSLY.
 
-Instructions:
-1. Read the task description from Linear or your context
-2. Implement the feature/fix
-3. Test your changes
-4. Commit with 'closes $TICKET: description'
-5. Push to remote
-6. When done, say 'TASK_COMPLETE'
+## YOUR TASK: $TICKET
 
-Start working now."
+## RULES (MUST FOLLOW)
+1. NEVER ask questions. Decide and do.
+2. NEVER ask 'should I continue?' Just continue.
+3. NEVER wait for approval. Ship it.
+4. On error → fix it yourself, don't stop.
+5. On uncertainty → make best decision, move forward.
+
+## WORKFLOW
+1. Get task details: Use mcp__linear__get_issue with id=\"$TICKET\"
+2. Read relevant files in your territory
+3. Implement the solution
+4. Test: Run 'npx next build' to verify
+5. Commit: git add -A && git commit -m 'closes $TICKET: <what you did>'
+6. Push: git push
+7. Update Linear: Use mcp__linear__update_issue to set state='Done'
+8. Say: TASK_COMPLETE
+
+## START NOW. Ship fast. No questions."
 
   echo ""
   echo "Starting Claude for $TICKET..."
   echo ""
 
-  # Run Claude - will exit when task complete
+  # === 6. RUN CLAUDE ===
   if claude --dangerously-skip-permissions "$PROMPT"; then
-    # Claude exited successfully - mark dispatch as completed
     echo ""
-    echo "=== $TICKET completed ==="
-    curl -s "$CONVEX_URL/markDispatchCompleted?dispatchId=$DISPATCH_ID" > /dev/null
+    echo "✅ $TICKET COMPLETED"
+    if [ -n "$DISPATCH_ID" ] && [ "$DISPATCH_ID" != "null" ]; then
+      curl -s "$CONVEX_URL/markDispatchCompleted?dispatchId=$DISPATCH_ID" > /dev/null 2>&1 || true
+    fi
   else
-    # Claude exited with error - mark dispatch as failed
     echo ""
-    echo "=== $TICKET failed ==="
-    curl -s "$CONVEX_URL/markDispatchFailed?dispatchId=$DISPATCH_ID&error=Claude%20exited%20with%20error" > /dev/null
+    echo "❌ $TICKET FAILED"
+    if [ -n "$DISPATCH_ID" ] && [ "$DISPATCH_ID" != "null" ]; then
+      curl -s "$CONVEX_URL/markDispatchFailed?dispatchId=$DISPATCH_ID&error=claude_error" > /dev/null 2>&1 || true
+    fi
   fi
 
-  echo "Checking for next task..."
   echo ""
-
+  echo "Looking for next task..."
   sleep 5
 done

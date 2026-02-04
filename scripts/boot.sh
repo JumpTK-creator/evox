@@ -3,10 +3,8 @@
 # Usage: ./scripts/boot.sh <agent> [ticket]
 # Example: ./scripts/boot.sh sam AGT-158
 #
-# Fetches assembled context from Convex and injects into the correct config file:
-#   - sam → .claude-context (Claude Code)
-#   - leo → .cursorrules (Cursor)
-#   - max → .claude-context (Claude Code)
+# Fetches assembled context from Convex and injects into .claude-context
+# All agents (sam, leo, max, quinn) use Claude Code
 
 set -e
 
@@ -70,16 +68,10 @@ if echo "$CONTEXT" | grep -q '"error"'; then
   exit 1
 fi
 
-# Write to appropriate file based on agent
-if [ "$AGENT" = "leo" ]; then
-  OUTPUT_FILE=".cursorrules"
-  echo "$CONTEXT" > "$OUTPUT_FILE"
-  echo "Context injected into $OUTPUT_FILE for Cursor"
-else
-  OUTPUT_FILE=".claude-context"
-  echo "$CONTEXT" > "$OUTPUT_FILE"
-  echo "Context ready at $OUTPUT_FILE for Claude Code"
-fi
+# All agents now use Claude Code
+OUTPUT_FILE=".claude-context"
+echo "$CONTEXT" > "$OUTPUT_FILE"
+echo "Context ready at $OUTPUT_FILE for Claude Code"
 
 # Show summary
 echo ""
