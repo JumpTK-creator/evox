@@ -52,9 +52,11 @@ const timeFilterOptions: { value: TimeFilter; label: string }[] = [
 export function AnalyticsPanelV2({ className }: AnalyticsPanelV2Props) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("7days");
 
+  // Capture current time once on mount for stable comparison
+  const [now] = useState<number>(() => Date.now());
+
   // Get time range based on filter
   const timeRange = useMemo(() => {
-    const now = new Date().getTime();
     const today = startOfDay(new Date());
     switch (timeFilter) {
       case "today":

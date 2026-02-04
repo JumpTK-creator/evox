@@ -100,6 +100,17 @@ export const findNextTask = query({
 });
 
 /**
+ * Internal action wrapper for autoDispatchForAgent (AGT-256)
+ * Used by requestWork to schedule auto-dispatch via scheduler
+ */
+export const autoDispatchForAgentInternal = internalAction({
+  args: { agentName: v.string() },
+  handler: async (ctx, { agentName }) => {
+    return await ctx.runMutation(api.automation.autoDispatchForAgent, { agentName });
+  },
+});
+
+/**
  * Auto-dispatch a task to an idle agent
  */
 export const autoDispatchForAgent = mutation({
