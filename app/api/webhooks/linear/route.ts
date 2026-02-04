@@ -159,14 +159,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if this is a state change
+    // Check if this is a state change or assignment change
     const isStateChange = action === "update" && updatedFrom?.stateId;
+    const isAssignmentChange = action === "update" && updatedFrom?.assigneeId !== undefined;
 
-    if (!isStateChange && action !== "create") {
+    if (!isStateChange && !isAssignmentChange && action !== "create") {
       return NextResponse.json({
         success: true,
         skipped: true,
-        reason: "Not a state change or create event",
+        reason: "Not a state change, assignment change, or create event",
       });
     }
 
@@ -218,6 +219,35 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`Synced ${linearIdentifier}:`, result);
+
+    // AGT-255: If this is an assignment change, fire agentEvent to wake agent
+    if (isAssignmentChange && data.assignee) {
+      const assigneeName = data.assignee.name?.toLowerCase();
+      const validAgents = ["sam", "leo", "max", "quinn", "ella"];
+
+      if (validAgents.includes(assigneeName)) {
+        // Fire task_assigned event via Convex
+        try {
+          await convex.mutation(api.agentEvents.publishEvent, {
+            type: "task_assigned",
+            targetAgent: assigneeName,
+            payload: {
+              taskId: linearIdentifier,
+              message: `New task assigned: ${title}`,
+              priority: evoxPriority === "urgent" ? "urgent" : evoxPriority === "high" ? "high" : "normal",
+              metadata: {
+                linearUrl,
+                assignedBy: "linear_webhook",
+              },
+            },
+          });
+
+          console.log(`Fired task_assigned event for ${assigneeName}: ${linearIdentifier}`);
+        } catch (error) {
+          console.error(`Failed to fire agentEvent for ${assigneeName}:`, error);
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

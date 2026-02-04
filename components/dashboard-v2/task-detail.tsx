@@ -1,7 +1,7 @@
 "use client";
 
 import type { KanbanTask } from "./task-card";
-import { TaskCommentThread } from "./task-comment-thread";
+import { CommentThreadV2 } from "@/components/evox/CommentThreadV2";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface TaskDetailProps {
@@ -55,7 +55,7 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
       </div>
       {/* AGT-114: Comment thread — bottom section, chat-style */}
       <div className="mt-4 flex-1 min-h-0 flex flex-col">
-        <TaskCommentThread taskId={taskId} />
+        <CommentThreadV2 taskId={taskId} />
       </div>
     </div>
   );

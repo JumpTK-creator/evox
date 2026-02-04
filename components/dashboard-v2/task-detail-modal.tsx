@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { TaskCommentThread } from "./task-comment-thread";
+import { CommentThreadV2 } from "@/components/evox/CommentThreadV2";
 import { formatDistanceToNow } from "date-fns";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -167,7 +167,7 @@ export function TaskDetailModal({ open, task, onClose }: TaskDetailModalProps) {
           {/* Comments */}
           {taskId && (
             <div className="border-t border-white/[0.08] pt-4">
-              <TaskCommentThread taskId={taskId} />
+              <CommentThreadV2 taskId={taskId} />
             </div>
           )}
         </div>
