@@ -141,7 +141,7 @@ export const autoSpawn = mutation({
       .take(20);
 
     const relevantLearnings = learnings
-      .filter((l) => l.tags?.includes(role) || l.agent?.toLowerCase() === template.namePrefix.toLowerCase())
+      .filter((l) => l.tags?.includes(role) || l.agentName?.toLowerCase() === template.namePrefix.toLowerCase())
       .slice(0, 5);
 
     // Build enhanced prompt with learnings

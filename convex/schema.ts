@@ -22,7 +22,7 @@ export default defineSchema({
     statusReason: v.optional(v.string()), // Why agent is in this status (e.g., "Working on AGT-150")
     statusSince: v.optional(v.number()),  // Timestamp when status last changed
     currentTask: v.optional(v.id("tasks")),
-    avatar: v.string(),
+    avatar: v.optional(v.string()),
     soul: v.optional(v.string()), // Agent identity/personality summary (from SOUL.md)
     about: v.optional(v.string()), // Short 1-line description (fallback if soul is empty)
     lastSeen: v.number(),
@@ -37,6 +37,13 @@ export default defineSchema({
     consecutiveFailures: v.optional(v.number()),      // Failures since last success (for circuit breaker)
     recoveryBackoffLevel: v.optional(v.number()),     // 0=1min, 1=5min, 2=15min backoff
     lastRestartAt: v.optional(v.number()),            // Timestamp of last auto-restart
+    // AGT-252: Auto-Spawn Agent fields
+    skills: v.optional(v.array(v.string())),          // Agent skills (e.g., ["convex", "typescript"])
+    territory: v.optional(v.array(v.string())),       // File patterns (e.g., ["convex/", "scripts/"])
+    geniusDNA: v.optional(v.array(v.string())),       // Genius DNA markers (e.g., ["von_neumann", "feynman"])
+    basePrompt: v.optional(v.string()),               // Base system prompt for agent
+    spawnedAt: v.optional(v.number()),                // When agent was auto-spawned
+    spawnReason: v.optional(v.string()),              // Why agent was spawned
   })
     .index("by_status", ["status"])
     .index("by_name", ["name"]),
