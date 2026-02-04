@@ -53,6 +53,8 @@
 
 ## Completed Today (Session 16-19)
 
+- ✅ AGT-256: Agent Ping System — Request work when idle (Sam)
+- ✅ AGT-255: Auto-Wake System — Webhook triggers agent start (Sam)
 - ✅ AGT-252: Auto-Recruit Agents — Self-Spawning Team (Sam)
 - ✅ AGT-227: Quinn QA Onboarding — Full Integration (Sam)
 - ✅ AGT-208: Auto-Dispatch from Backlog — Idle Agent Auto-Assign (Sam)
