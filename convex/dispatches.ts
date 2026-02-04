@@ -235,6 +235,32 @@ export const createFromLinear = mutation({
       return null;
     }
 
+    // Check for existing pending/running dispatch for same ticket to prevent duplicates
+    const existingDispatches = await ctx.db
+      .query("dispatches")
+      .withIndex("by_agent", (q) => q.eq("agentId", agent._id))
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("status"), "pending"),
+          q.eq(q.field("status"), "running")
+        )
+      )
+      .collect();
+
+    const duplicate = existingDispatches.find((d) => {
+      try {
+        const payload = JSON.parse(d.payload || "{}");
+        return payload.identifier === linearIdentifier;
+      } catch {
+        return false;
+      }
+    });
+
+    if (duplicate) {
+      console.log(`Duplicate dispatch for ${linearIdentifier}, skipping`);
+      return duplicate._id;
+    }
+
     const dispatchId = await ctx.db.insert("dispatches", {
       agentId: agent._id,
       command: "execute_ticket",
@@ -260,5 +286,158 @@ export const createFromLinear = mutation({
     });
 
     return dispatchId;
+  },
+});
+
+// Clean up duplicate pending dispatches (keep oldest)
+export const cleanupDuplicates = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const pendingDispatches = await ctx.db
+      .query("dispatches")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+
+    // Group by agent + ticket identifier
+    const groups = new Map<string, typeof pendingDispatches>();
+
+    for (const d of pendingDispatches) {
+      let ticketId = "unknown";
+      try {
+        const payload = JSON.parse(d.payload || "{}");
+        ticketId = payload.identifier || payload.linearIdentifier || "unknown";
+      } catch {
+        // ignore
+      }
+
+      const key = `${d.agentId}-${ticketId}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(d);
+    }
+
+    // Delete duplicates (keep oldest by createdAt)
+    let deleted = 0;
+    for (const [_, dispatches] of groups) {
+      if (dispatches.length > 1) {
+        // Sort by createdAt ascending, keep first
+        dispatches.sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+        for (let i = 1; i < dispatches.length; i++) {
+          await ctx.db.delete(dispatches[i]._id);
+          deleted++;
+        }
+      }
+    }
+
+    return { success: true, deleted };
+  },
+});
+
+// Get dispatch queue summary for an agent
+export const getQueueForAgent = query({
+  args: { agentName: v.string() },
+  handler: async (ctx, { agentName }) => {
+    const agents = await ctx.db.query("agents").collect();
+    const agent = agents.find(
+      (a) => a.name.toUpperCase() === agentName.toUpperCase()
+    );
+
+    if (!agent) {
+      return { error: "agent_not_found", pending: 0, running: 0 };
+    }
+
+    const pending = await ctx.db
+      .query("dispatches")
+      .withIndex("by_agent", (q) => q.eq("agentId", agent._id).eq("status", "pending"))
+      .collect();
+
+    const running = await ctx.db
+      .query("dispatches")
+      .withIndex("by_agent", (q) => q.eq("agentId", agent._id).eq("status", "running"))
+      .collect();
+
+    return {
+      agentName: agent.name,
+      pending: pending.length,
+      running: running.length,
+      pendingTickets: pending.map((d) => {
+        try {
+          const payload = JSON.parse(d.payload || "{}");
+          return payload.identifier || payload.linearIdentifier || "unknown";
+        } catch {
+          return "unknown";
+        }
+      }),
+    };
+  },
+});
+
+// Cleanup stuck running dispatches (older than threshold)
+export const cleanupStuckDispatches = mutation({
+  args: {
+    maxAgeMinutes: v.optional(v.number()), // Default 30 minutes
+  },
+  handler: async (ctx, { maxAgeMinutes }) => {
+    const threshold = Date.now() - (maxAgeMinutes ?? 30) * 60 * 1000;
+
+    const runningDispatches = await ctx.db
+      .query("dispatches")
+      .withIndex("by_status", (q) => q.eq("status", "running"))
+      .collect();
+
+    const stuck = runningDispatches.filter(
+      (d) => (d.startedAt ?? d.createdAt) < threshold
+    );
+
+    // Mark stuck dispatches as failed
+    for (const d of stuck) {
+      await ctx.db.patch(d._id, {
+        status: "failed",
+        completedAt: Date.now(),
+        error: "Stuck dispatch - auto-cleaned after timeout",
+      });
+    }
+
+    return { success: true, cleaned: stuck.length };
+  },
+});
+
+// Force reset all running dispatches for an agent (emergency cleanup)
+export const resetAgentDispatches = mutation({
+  args: {
+    agentName: v.string(),
+  },
+  handler: async (ctx, { agentName }) => {
+    const agents = await ctx.db.query("agents").collect();
+    const agent = agents.find(
+      (a) => a.name.toUpperCase() === agentName.toUpperCase()
+    );
+
+    if (!agent) {
+      return { error: "agent_not_found", reset: 0 };
+    }
+
+    const running = await ctx.db
+      .query("dispatches")
+      .withIndex("by_agent", (q) => q.eq("agentId", agent._id).eq("status", "running"))
+      .collect();
+
+    for (const d of running) {
+      await ctx.db.patch(d._id, {
+        status: "failed",
+        completedAt: Date.now(),
+        error: "Force reset by admin",
+      });
+    }
+
+    // Also reset agent status to idle
+    await ctx.db.patch(agent._id, {
+      status: "idle",
+      statusReason: "Dispatches reset",
+      currentTask: undefined,
+    });
+
+    return { success: true, reset: running.length, agentName: agent.name };
   },
 });

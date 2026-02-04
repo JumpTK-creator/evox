@@ -1763,6 +1763,125 @@ http.route({
 });
 
 /**
+ * POST /cleanupDuplicateDispatches — Remove duplicate pending dispatches
+ * Keeps the oldest dispatch for each agent+ticket combination
+ */
+http.route({
+  path: "/cleanupDuplicateDispatches",
+  method: "POST",
+  handler: httpAction(async (ctx) => {
+    try {
+      const result = await ctx.runMutation(api.dispatches.cleanupDuplicates, {});
+      return new Response(
+        JSON.stringify(result),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("cleanupDuplicateDispatches error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /dispatchQueue?agent=<name> — Get dispatch queue summary for an agent
+ */
+http.route({
+  path: "/dispatchQueue",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const agent = url.searchParams.get("agent");
+
+      if (!agent) {
+        return new Response(
+          JSON.stringify({ error: "agent query param required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await ctx.runQuery(api.dispatches.getQueueForAgent, {
+        agentName: agent,
+      });
+      return new Response(
+        JSON.stringify(result),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("dispatchQueue error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * POST /cleanupStuckDispatches — Cleanup dispatches stuck in running state
+ * Body: { maxAgeMinutes?: number } - Default 30 minutes
+ */
+http.route({
+  path: "/cleanupStuckDispatches",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json().catch(() => ({}));
+      const result = await ctx.runMutation(api.dispatches.cleanupStuckDispatches, {
+        maxAgeMinutes: body.maxAgeMinutes,
+      });
+      return new Response(
+        JSON.stringify(result),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("cleanupStuckDispatches error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * POST /resetAgentDispatches — Force reset all running dispatches for an agent
+ * Body: { agentName: "sam" }
+ */
+http.route({
+  path: "/resetAgentDispatches",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      if (!body.agentName) {
+        return new Response(
+          JSON.stringify({ error: "agentName is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      const result = await ctx.runMutation(api.dispatches.resetAgentDispatches, {
+        agentName: body.agentName,
+      });
+      return new Response(
+        JSON.stringify(result),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("resetAgentDispatches error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
  * POST /vercel-webhook — Handle Vercel deployment events
  * Posts status updates to Linear and creates P0 bug tickets on failure
  */
