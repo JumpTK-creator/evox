@@ -130,12 +130,23 @@ http.route({
       const AGENTS = ["SAM", "LEO"];
       let dispatched = false;
 
+      // Extract agent from title prefix [SAM] or [LEO]
+      const extractAgentFromTitle = (title: string): string | null => {
+        const match = title?.match(/^\[(SAM|LEO)\]/i);
+        return match ? match[1].toUpperCase() : null;
+      };
+
       // Helper to create dispatch
-      const tryDispatch = async (assigneeName: string, identifier: string, title: string, description: string) => {
-        const normalizedName = assigneeName?.toUpperCase();
-        if (normalizedName && AGENTS.includes(normalizedName)) {
+      const tryDispatch = async (assigneeName: string | null, identifier: string, title: string, description: string) => {
+        // First check assignee, then fall back to title prefix
+        let agentName = assigneeName?.toUpperCase();
+        if (!agentName || !AGENTS.includes(agentName)) {
+          agentName = extractAgentFromTitle(title) || undefined;
+        }
+
+        if (agentName && AGENTS.includes(agentName)) {
           await ctx.runMutation(api.dispatches.createFromLinear, {
-            agentName: normalizedName,
+            agentName,
             linearIdentifier: identifier,
             title,
             description: description || "",
