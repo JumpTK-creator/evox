@@ -9,9 +9,12 @@
 | Priority | Ticket | Task | Status |
 |----------|--------|------|--------|
 | 1 | **AGT-216** | Auto-Recovery — Self-healing restart & retry | TODO |
-| 2 | AGT-214 | Cron Scheduler — Schedule agent tasks | TODO |
+| 2 | AGT-214 | Cron Scheduler — Schedule agent tasks | IN PROGRESS |
+| 3 | AGT-222 | Session Learning System | TODO |
+| 4 | AGT-223 | Max Autonomous Monitor | TODO |
+| 5 | AGT-225 | QA Agent Integration — Automated test gate | TODO |
 
-**Instructions:** Start with AGT-216 (Auto-Recovery). Heartbeat timeout + exponential backoff.
+**Instructions:** Continue AGT-214 then move to AGT-222 (Session Learning).
 
 ---
 
@@ -19,9 +22,23 @@
 
 | Priority | Ticket | Task | Status |
 |----------|--------|------|--------|
-| — | — | Queue empty | — |
+| 1 | **AGT-224** | Public Demo Mode — Read-only viewer protection | TODO |
+| 2 | AGT-213 | Automation Dashboard | IN PROGRESS |
 
-**Status:** Waiting for new tasks.
+**Instructions:** Continue AGT-213 then AGT-224 (Public Demo Mode - critical security).
+
+---
+
+## Quinn (QA) — Quality Assurance
+
+| Priority | Task | Status |
+|----------|------|--------|
+| 1 | Review recent commits from Sam/Leo | ONGOING |
+| 2 | Test AGT-213 (Automation Dashboard) | TODO |
+| 3 | Test AGT-214 (Cron Scheduler) | TODO |
+| 4 | Regression test critical paths | TODO |
+
+**Instructions:** Test features after Sam/Leo complete. Report bugs via #dev channel + Linear tickets.
 
 ---
 

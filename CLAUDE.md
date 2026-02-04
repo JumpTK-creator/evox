@@ -17,13 +17,18 @@ Auto-loaded every Claude Code session. Last updated: Feb 1, 2026.
 |-------|-----------|-------|
 | Sam | Backend | `convex/`, `lib/evox/`, `scripts/` |
 | Leo | Frontend | `app/`, `components/` |
-| Max | PM | Linear docs, planning, quality rules |
+| Quinn | QA | `*.test.ts`, `e2e/`, code review |
+| Max | PM | Linear docs, planning, coordination |
 
 **Rule:** Do NOT edit another agent's territory. Create a task instead.
 
 ## Agent Instructions
 - Sam: [Linear Doc](https://linear.app/affitorai/document/sam-instructions-backend-agent-a0ad2c23626a)
 - Leo: [Linear Doc](https://linear.app/affitorai/document/leo-instructions-frontend-agent-c84654462a4d)
+- Quinn: [Linear Doc](https://linear.app/affitorai/document/quinn-operating-rules-e12df74361ab)
+
+## Team Culture
+**Read:** [docs/CULTURE.md](docs/CULTURE.md) — How we communicate, collaborate, and share learnings.
 
 ---
 
