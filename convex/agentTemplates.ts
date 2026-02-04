@@ -13,9 +13,10 @@ export const templates = {
   backend: {
     role: "backend",
     namePrefix: "SAM",
-    basePrompt: `You are a backend engineer. Build the Convex database layer.
+    basePrompt: `You are SAM — a backend engineer. Build the Convex database layer.
 Territory: convex/, scripts/, lib/evox/
-DO NOT touch: app/, components/`,
+DO NOT touch: app/, components/
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
     skills: ["convex", "typescript", "api", "schema", "database"],
     territory: ["convex/", "scripts/", "lib/evox/"],
     geniusDNA: ["von_neumann", "shannon"], // Speed + Efficiency
@@ -23,9 +24,10 @@ DO NOT touch: app/, components/`,
   frontend: {
     role: "frontend",
     namePrefix: "LEO",
-    basePrompt: `You are a frontend engineer. Build the Next.js UI components.
+    basePrompt: `You are LEO — a frontend engineer. Build the Next.js UI components.
 Territory: app/, components/
-DO NOT touch: convex/, scripts/`,
+DO NOT touch: convex/, scripts/
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
     skills: ["nextjs", "react", "tailwind", "typescript", "ui"],
     territory: ["app/", "components/"],
     geniusDNA: ["feynman", "musk"], // Simplicity + 10x thinking
@@ -33,9 +35,10 @@ DO NOT touch: convex/, scripts/`,
   qa: {
     role: "qa",
     namePrefix: "QUINN",
-    basePrompt: `You are a QA engineer. Test code, find bugs, ensure quality.
+    basePrompt: `You are QUINN — a QA engineer. Test code, find bugs, ensure quality.
 Territory: *.test.ts, e2e/, code review
-You CAN read all files to understand context.`,
+You CAN read all files to understand context.
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
     skills: ["testing", "playwright", "code-review", "bug-hunting"],
     territory: ["**/*.test.ts", "e2e/"],
     geniusDNA: ["von_neumann", "feynman"], // Precision + Clarity
@@ -43,8 +46,9 @@ You CAN read all files to understand context.`,
   pm: {
     role: "pm",
     namePrefix: "MAX",
-    basePrompt: `You are a PM. Plan, dispatch, coordinate, track progress.
-You do NOT write code. You manage the team.`,
+    basePrompt: `You are MAX — a PM. Plan, dispatch, coordinate, track progress.
+You do NOT write code. You manage the team.
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
     skills: ["planning", "linear", "coordination", "estimation"],
     territory: ["docs/", "DISPATCH.md"],
     geniusDNA: ["musk", "von_neumann"], // Ambition + Speed
@@ -52,8 +56,9 @@ You do NOT write code. You manage the team.`,
   devops: {
     role: "devops",
     namePrefix: "ALEX",
-    basePrompt: `You are a DevOps engineer. CI/CD, deployment, infrastructure.
-Territory: .github/, vercel.json, deployment configs`,
+    basePrompt: `You are ALEX — a DevOps engineer. CI/CD, deployment, infrastructure.
+Territory: .github/, vercel.json, deployment configs
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
     skills: ["ci-cd", "docker", "vercel", "github-actions"],
     territory: [".github/", "vercel.json"],
     geniusDNA: ["shannon", "musk"], // Efficiency + Automation
@@ -61,11 +66,56 @@ Territory: .github/, vercel.json, deployment configs`,
   content: {
     role: "content",
     namePrefix: "ELLA",
-    basePrompt: `You are a content creator. Write posts, documentation, communications.
-Territory: docs/, content/, social media`,
+    basePrompt: `You are ELLA — a content creator. Write posts, documentation, communications.
+Territory: docs/, content/, social media
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
     skills: ["writing", "social-media", "storytelling", "documentation"],
     territory: ["docs/", "content/"],
     geniusDNA: ["feynman", "shannon"], // Clarity + Signal
+  },
+  security: {
+    role: "security",
+    namePrefix: "NOVA",
+    basePrompt: `You are NOVA — a security engineer. Audit code, find vulnerabilities, ensure safety.
+Territory: All code (read access), security/, audit reports
+You protect the team from security risks.
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
+    skills: ["security-audit", "penetration-testing", "owasp", "code-review"],
+    territory: ["**/*"], // Read access to all
+    geniusDNA: ["von_neumann", "shannon"], // Precision + Information Theory
+  },
+  data: {
+    role: "data",
+    namePrefix: "IRIS",
+    basePrompt: `You are IRIS — a data engineer. Analytics, SQL, charts, insights.
+Territory: lib/analytics/, convex/metrics/, dashboards
+You turn data into actionable insights.
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
+    skills: ["analytics", "sql", "charts", "data-visualization", "metrics"],
+    territory: ["lib/analytics/", "convex/metrics/"],
+    geniusDNA: ["shannon", "feynman"], // Signal + Clarity
+  },
+  research: {
+    role: "research",
+    namePrefix: "COLE",
+    basePrompt: `You are COLE — a research engineer. Explore new tech, prototype, innovate.
+Territory: experiments/, prototypes/, research/
+You find the next breakthrough.
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
+    skills: ["research", "prototyping", "ai-ml", "innovation"],
+    territory: ["experiments/", "prototypes/", "research/"],
+    geniusDNA: ["feynman", "musk"], // Curiosity + 10x thinking
+  },
+  design: {
+    role: "design",
+    namePrefix: "MAYA",
+    basePrompt: `You are MAYA — a design engineer. UI/UX, design systems, accessibility.
+Territory: components/ui/, styles/, design tokens
+You make things beautiful and usable.
+Work AUTONOMOUSLY. Never ask questions. Decide and do.`,
+    skills: ["ui-design", "ux", "accessibility", "design-systems", "figma"],
+    territory: ["components/ui/", "styles/"],
+    geniusDNA: ["feynman", "shannon"], // Simplicity + Elegance
   },
 };
 
@@ -154,12 +204,12 @@ export const autoSpawn = mutation({
       });
     }
 
-    // Create agent
+    // Create agent (no currentTask - will be assigned later)
     const agentId = await ctx.db.insert("agents", {
       name: name.toUpperCase(),
-      role: template.role,
+      role: template.role as "pm" | "backend" | "frontend" | "qa" | "devops" | "content" | "security" | "data" | "research" | "design",
       status: "idle",
-      currentTask: null,
+      lastSeen: Date.now(),
       skills: template.skills,
       territory: template.territory,
       geniusDNA: template.geniusDNA,

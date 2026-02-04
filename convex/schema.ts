@@ -12,7 +12,18 @@ export default defineSchema({
   // Agent management
   agents: defineTable({
     name: v.string(),
-    role: v.union(v.literal("pm"), v.literal("backend"), v.literal("frontend"), v.literal("qa")),
+    role: v.union(
+      v.literal("pm"),
+      v.literal("backend"),
+      v.literal("frontend"),
+      v.literal("qa"),
+      v.literal("devops"),
+      v.literal("content"),
+      v.literal("security"),
+      v.literal("data"),
+      v.literal("research"),
+      v.literal("design")
+    ),
     status: v.union(
       v.literal("online"),
       v.literal("idle"),
@@ -980,4 +991,131 @@ export default defineSchema({
     .index("by_pool", ["poolId", "status"])
     .index("by_status", ["status", "createdAt"])
     .index("by_dispatch", ["dispatchId"]),
+
+  // AGT-253: Organization Learnings — Shared team patterns
+  orgLearnings: defineTable({
+    // Category of learning
+    category: v.union(
+      v.literal("pattern"),       // Reusable code pattern
+      v.literal("anti-pattern"),  // What NOT to do
+      v.literal("best-practice"), // Proven approach
+      v.literal("tool-tip"),      // Tool usage tip
+      v.literal("architecture")   // System design insight
+    ),
+    title: v.string(),
+    description: v.string(),
+
+    // Source
+    discoveredBy: v.string(),     // Agent name
+    sourceTask: v.optional(v.string()), // Linear identifier
+
+    // Validation
+    confirmedBy: v.array(v.string()),  // Other agents who validated
+    useCount: v.number(),              // Times applied
+    successRate: v.number(),           // 0-100%
+
+    // Code example
+    codeExample: v.optional(v.string()),
+    files: v.optional(v.array(v.string())),
+
+    // Evolution
+    version: v.number(),
+    active: v.boolean(),           // Can be deprecated
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_category", ["category", "createdAt"])
+    .index("by_discoverer", ["discoveredBy", "createdAt"])
+    .index("by_active", ["active", "successRate"]),
+
+  // AGT-253: Debates — Disagreement resolution
+  debates: defineTable({
+    topic: v.string(),
+    context: v.optional(v.string()), // Why this debate matters
+    initiatedBy: v.string(),         // Agent name
+
+    // Positions
+    positions: v.array(v.object({
+      agent: v.string(),
+      stance: v.string(),
+      arguments: v.array(v.string()),
+      evidence: v.optional(v.array(v.string())), // Links to code, docs
+      submittedAt: v.number(),
+    })),
+
+    // Resolution
+    status: v.union(
+      v.literal("open"),      // Debate ongoing
+      v.literal("resolved"),  // Consensus reached
+      v.literal("escalated"), // Needs human decision
+      v.literal("closed")     // Abandoned or superseded
+    ),
+    resolution: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()), // Agent or human who resolved
+
+    // Voting (for consensus)
+    votes: v.optional(v.array(v.object({
+      agent: v.string(),
+      position: v.number(), // Index of position voted for
+      votedAt: v.number(),
+    }))),
+
+    // Related task
+    taskRef: v.optional(v.string()), // Linear identifier
+
+    // Learning
+    outcomeApplied: v.boolean(),
+    impactMeasured: v.optional(v.string()),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status", "createdAt"])
+    .index("by_initiator", ["initiatedBy", "createdAt"])
+    .index("by_task", ["taskRef"]),
+
+  // AGT-253: Vision Progress — North Star tracking
+  visionProgress: defineTable({
+    metric: v.string(),           // "tasks_per_hour", "cost_per_task", etc.
+    description: v.string(),      // Human-readable description
+    unit: v.string(),             // "tasks/hr", "USD", "hours", "%"
+
+    // Targets
+    target: v.number(),
+    current: v.number(),
+    trend: v.union(
+      v.literal("up"),
+      v.literal("down"),
+      v.literal("stable")
+    ),
+    progressPercent: v.number(),  // 0-100 (or >100 if exceeded)
+
+    // History (last 7 data points)
+    history: v.array(v.object({
+      value: v.number(),
+      timestamp: v.number(),
+    })),
+
+    // Contributions
+    contributions: v.optional(v.array(v.object({
+      agent: v.string(),
+      task: v.string(),
+      impact: v.number(),
+      timestamp: v.number(),
+    }))),
+
+    // Status
+    onTrack: v.boolean(),         // Are we hitting targets?
+    risk: v.optional(v.string()), // What's blocking progress?
+
+    // Timestamps
+    createdAt: v.number(),
+    lastUpdated: v.number(),
+  })
+    .index("by_metric", ["metric"])
+    .index("by_onTrack", ["onTrack"]),
 });

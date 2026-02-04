@@ -26,6 +26,7 @@ import type * as automation from "../automation.js";
 import type * as costs from "../costs.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
+import type * as debates from "../debates.js";
 import type * as dispatches from "../dispatches.js";
 import type * as documents from "../documents.js";
 import type * as execution from "../execution.js";
@@ -56,6 +57,7 @@ import type * as standup from "../standup.js";
 import type * as system from "../system.js";
 import type * as taskComments from "../taskComments.js";
 import type * as tasks from "../tasks.js";
+import type * as visionProgress from "../visionProgress.js";
 import type * as webhooks from "../webhooks.js";
 
 import type {
@@ -83,6 +85,7 @@ declare const fullApi: ApiFromModules<{
   costs: typeof costs;
   crons: typeof crons;
   dashboard: typeof dashboard;
+  debates: typeof debates;
   dispatches: typeof dispatches;
   documents: typeof documents;
   execution: typeof execution;
@@ -113,6 +116,7 @@ declare const fullApi: ApiFromModules<{
   system: typeof system;
   taskComments: typeof taskComments;
   tasks: typeof tasks;
+  visionProgress: typeof visionProgress;
   webhooks: typeof webhooks;
 }>;
 

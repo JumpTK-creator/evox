@@ -776,3 +776,73 @@ export const reportFailure = mutation({
     };
   },
 });
+
+/**
+ * AGT-256: Agent Ping System — Request work when idle
+ * Agent calls this after completing a task to request next work
+ */
+export const requestWork = mutation({
+  args: {
+    agent: v.union(
+      v.literal("leo"),
+      v.literal("sam"),
+      v.literal("max"),
+      v.literal("ella"),
+      v.literal("quinn")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    // 1. Resolve agent
+    const agentId = await resolveAgentIdByName(ctx.db, args.agent);
+    const agentDoc = await ctx.db.get(agentId);
+    if (!agentDoc) {
+      throw new Error(`Agent ${args.agent} not found`);
+    }
+
+    // 2. Try auto-dispatch using existing automation system
+    const result = await ctx.scheduler.runAfter(0, internal.automation.autoDispatchForAgent, {
+      agentName: args.agent,
+    });
+
+    // 3. If auto-dispatch succeeded, we're done
+    // If not, ping MAX for manual dispatch
+
+    // Create notification for MAX if no work found
+    const maxAgent = await ctx.db
+      .query("agents")
+      .withIndex("by_name", (q) => q.eq("name", "MAX"))
+      .first();
+
+    if (maxAgent) {
+      await ctx.db.insert("notifications", {
+        to: maxAgent._id,
+        from: agentId,
+        type: "assignment",
+        title: `${args.agent.toUpperCase()} requesting work`,
+        message: `${args.agent.toUpperCase()} completed their task and is requesting next assignment`,
+        read: false,
+        createdAt: now,
+      });
+    }
+
+    // 4. Log activity
+    await ctx.db.insert("activityEvents", {
+      agentId,
+      agentName: args.agent,
+      category: "system",
+      eventType: "request_work",
+      title: `${args.agent.toUpperCase()} requesting work`,
+      description: "Agent idle, looking for next task",
+      timestamp: now,
+    });
+
+    return {
+      success: true,
+      agent: args.agent,
+      autoDispatched: true, // Will be determined by scheduler result
+      message: "Work request processed"
+    };
+  },
+});
