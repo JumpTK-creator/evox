@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 /**
  * Phase 5: Execution Engine - Dispatch Management
@@ -19,7 +20,7 @@ export const create = mutation({
     const agent = await ctx.db.get(agentId);
     if (!agent) throw new Error("Agent not found");
 
-    return await ctx.db.insert("dispatches", {
+    const dispatchId = await ctx.db.insert("dispatches", {
       agentId,
       command,
       payload,
@@ -28,6 +29,20 @@ export const create = mutation({
       status: "pending",
       createdAt: Date.now(),
     });
+
+    // AGT-247: Fire event bus notification for new dispatch
+    const priorityMap = { 0: "urgent", 1: "high", 2: "normal", 3: "low" };
+    await ctx.scheduler.runAfter(0, internal.agentEvents.publishEvent, {
+      type: "dispatch",
+      targetAgent: agent.name.toLowerCase(),
+      payload: {
+        dispatchId: dispatchId,
+        message: `New dispatch: ${command}`,
+        priority: (priorityMap as Record<number, "urgent" | "high" | "normal" | "low">)[priority ?? 2],
+      },
+    });
+
+    return dispatchId;
   },
 });
 
@@ -220,7 +235,7 @@ export const createFromLinear = mutation({
       return null;
     }
 
-    return await ctx.db.insert("dispatches", {
+    const dispatchId = await ctx.db.insert("dispatches", {
       agentId: agent._id,
       command: "execute_ticket",
       payload: JSON.stringify({
@@ -231,5 +246,19 @@ export const createFromLinear = mutation({
       status: "pending",
       createdAt: Date.now(),
     });
+
+    // AGT-247: Fire event bus notification for new dispatch
+    await ctx.scheduler.runAfter(0, internal.agentEvents.publishEvent, {
+      type: "dispatch",
+      targetAgent: agentName.toLowerCase(),
+      payload: {
+        taskId: linearIdentifier,
+        dispatchId: dispatchId,
+        message: `New task assigned: ${title}`,
+        priority: "normal",
+      },
+    });
+
+    return dispatchId;
   },
 });

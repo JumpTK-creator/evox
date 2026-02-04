@@ -583,13 +583,7 @@ export default defineSchema({
     message: v.string(),
     taskId: v.optional(v.id("tasks")),
     linearIdentifier: v.optional(v.string()),
-    metadata: v.optional(v.object({
-      command: v.optional(v.string()),        // CLI command executed
-      exitCode: v.optional(v.number()),       // Command exit code
-      duration: v.optional(v.number()),       // Execution time in ms
-      filesAffected: v.optional(v.array(v.string())),
-      error: v.optional(v.string()),          // Error details
-    })),
+    metadata: v.optional(v.any()),            // Flexible metadata for various log types
     timestamp: v.number(),
   })
     .index("by_agent", ["agentName", "timestamp"])
@@ -835,4 +829,148 @@ export default defineSchema({
     .index("by_target_created", ["targetAgent", "createdAt"])
     .index("by_status", ["status"])
     .index("by_expires", ["expiresAt"]),
+
+  // AGT-248: Agent Mesh — P2P Communication without coordinator
+  // Direct peer-to-peer messaging with broadcast support
+  meshMessages: defineTable({
+    // Message type
+    type: v.union(
+      v.literal("direct"),             // 1:1 message
+      v.literal("broadcast"),          // 1:many message
+      v.literal("ping"),               // Heartbeat check
+      v.literal("ack")                 // Acknowledgment/reply
+    ),
+
+    // Participants
+    fromAgent: v.string(),             // Sender: "sam", "leo", "max", "quinn"
+    toAgents: v.array(v.string()),     // Recipients (array for broadcast support)
+
+    // Content
+    content: v.string(),               // Message payload
+    priority: v.optional(v.union(
+      v.literal("low"),
+      v.literal("normal"),
+      v.literal("high"),
+      v.literal("urgent")
+    )),
+    taskRef: v.optional(v.string()),   // Optional task reference (AGT-XXX)
+    replyTo: v.optional(v.id("meshMessages")), // For threaded conversations
+
+    // Delivery tracking
+    status: v.union(
+      v.literal("pending"),            // Sent but not delivered
+      v.literal("delivered"),          // All recipients received
+      v.literal("completed")           // All recipients acknowledged
+    ),
+    deliveredTo: v.optional(v.array(v.string())),  // Which agents have received
+    acknowledgedBy: v.optional(v.array(v.string())), // Which agents have acked
+
+    // Timestamps
+    createdAt: v.number(),
+    deliveredAt: v.optional(v.number()),  // When last recipient received
+    completedAt: v.optional(v.number()),  // When all recipients acked
+    expiresAt: v.number(),               // Auto-cleanup TTL
+  })
+    .index("by_from", ["fromAgent", "createdAt"])
+    .index("by_status", ["status", "createdAt"])
+    .index("by_created", ["createdAt"])
+    .index("by_expires", ["expiresAt"]),
+
+  // AGT-249: Self-Spawning Agents — Worker Pools
+  // Parent agents spawn sub-agents (workers) for parallel task execution
+  workerPools: defineTable({
+    // Parent agent that spawned the workers
+    parentAgentId: v.id("agents"),
+    parentAgentName: v.string(),           // "sam", "leo", "max", "quinn"
+
+    // Task context
+    taskId: v.optional(v.id("tasks")),
+    linearIdentifier: v.optional(v.string()), // "AGT-249"
+
+    // Pool configuration
+    mergeStrategy: v.union(
+      v.literal("all_success"),    // Wait for all workers to succeed
+      v.literal("first_success"),  // Return on first success
+      v.literal("best_effort")     // Collect all results, even with failures
+    ),
+    timeoutMs: v.optional(v.number()),      // Overall timeout for all workers
+
+    // Pool state
+    status: v.union(
+      v.literal("pending"),        // Not yet started
+      v.literal("running"),        // Workers executing
+      v.literal("completed"),      // All workers succeeded
+      v.literal("failed"),         // Pool failed
+      v.literal("partial")         // Some workers failed, some succeeded
+    ),
+    totalWorkers: v.number(),
+    completedWorkers: v.number(),
+    failedWorkers: v.number(),
+
+    // Results
+    mergedResult: v.optional(v.string()),   // JSON stringified merged results
+    error: v.optional(v.string()),          // Error if pool failed
+
+    // Cleanup
+    archived: v.optional(v.boolean()),      // Soft delete for audit trail
+
+    // Timestamps
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_parent", ["parentAgentId", "createdAt"])
+    .index("by_parent_name", ["parentAgentName", "status", "createdAt"])
+    .index("by_status", ["status", "createdAt"])
+    .index("by_task", ["taskId", "createdAt"])
+    .index("by_linearId", ["linearIdentifier", "createdAt"]),
+
+  // AGT-249: Self-Spawning Agents — Workers
+  // Individual worker subtasks spawned by parent agents
+  workers: defineTable({
+    // Pool membership
+    poolId: v.id("workerPools"),
+
+    // Worker identity
+    name: v.string(),                       // "worker-1", "worker-2", etc.
+    description: v.string(),                // Human-readable description
+
+    // Execution details
+    command: v.string(),                    // Command to execute
+    payload: v.optional(v.string()),        // Command payload
+    priority: v.optional(v.number()),       // 0=URGENT, 1=HIGH, 2=NORMAL, 3=LOW
+
+    // Status
+    status: v.union(
+      v.literal("pending"),        // Not yet started
+      v.literal("running"),        // Currently executing
+      v.literal("completed"),      // Successfully completed
+      v.literal("failed")          // Failed with error
+    ),
+
+    // Results
+    result: v.optional(v.string()),         // Success result
+    error: v.optional(v.string()),          // Error message if failed
+    metrics: v.optional(v.object({
+      durationMs: v.optional(v.number()),
+      filesChanged: v.optional(v.array(v.string())),
+      linesChanged: v.optional(v.number()),
+    })),
+
+    // Links
+    dispatchId: v.optional(v.id("dispatches")), // Associated dispatch
+
+    // Cleanup
+    archived: v.optional(v.boolean()),      // Soft delete for audit trail
+
+    // Timestamps
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_pool", ["poolId", "status"])
+    .index("by_status", ["status", "createdAt"])
+    .index("by_dispatch", ["dispatchId"]),
 });

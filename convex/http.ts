@@ -2633,7 +2633,6 @@ http.route({
     }
   }),
 });
-export default http;
 
 // ============================================================
 // AGT-234: AUTO-HANDOFF & PING SYSTEM
@@ -2702,6 +2701,17 @@ http.route({
         title: from.toUpperCase() + " handed off to " + to.toUpperCase(), description: handoffMessage,
         metadata: { source: "handoff_system" },
       });
+      // AGT-247: Fire event bus notification for handoff
+      await ctx.runMutation(api.agentEvents.publishEventFromHTTP, {
+        type: "handoff",
+        targetAgent: to.toLowerCase(),
+        payload: {
+          taskId: taskId || undefined,
+          fromAgent: from.toLowerCase(),
+          message: handoffMessage,
+          priority: "high",
+        },
+      });
       return new Response(JSON.stringify({ success: true, from, to, message: handoffMessage }), { status: 200, headers: { "Content-Type": "application/json" } });
     } catch (error) {
       return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: { "Content-Type": "application/json" } });
@@ -2741,6 +2751,17 @@ http.route({
           metadata: { source: "approval_system" },
         });
       }
+      // AGT-247: Fire event bus notification for approval request
+      await ctx.runMutation(api.agentEvents.publishEventFromHTTP, {
+        type: "approval_needed",
+        targetAgent: "max",
+        payload: {
+          taskId: taskId || undefined,
+          fromAgent: from.toLowerCase(),
+          message: question,
+          priority: "urgent",
+        },
+      });
       return new Response(JSON.stringify({ success: true, ...result, sentTo: "max" }), { status: 200, headers: { "Content-Type": "application/json" } });
     } catch (error) {
       return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: { "Content-Type": "application/json" } });
@@ -2990,3 +3011,128 @@ http.route({
     }
   }),
 });
+
+
+// ============================================================
+// AGT-247: EVENT BUS ENDPOINTS — Real-time Agent Notifications
+// ============================================================
+
+/**
+ * GET /api/events/subscribe?agent=<name>&since=<timestamp>
+ * Subscribe to events for a specific agent.
+ * Returns pending events that have not been delivered yet.
+ */
+http.route({
+  path: "/api/events/subscribe",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const agent = url.searchParams.get("agent");
+      const since = url.searchParams.get("since");
+
+      if (!agent) {
+        return new Response(
+          JSON.stringify({ error: "agent query parameter is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await ctx.runQuery(api.agentEvents.subscribeToEvents, {
+        agent: agent.toLowerCase(),
+        since: since ? parseInt(since) : undefined,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Event subscription error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * POST /api/events/ack
+ * Acknowledge receipt of an event.
+ * Body: { eventId: "..." }
+ */
+http.route({
+  path: "/api/events/ack",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      const { eventId } = body;
+
+      if (!eventId) {
+        return new Response(
+          JSON.stringify({ error: "eventId is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await ctx.runMutation(api.agentEvents.acknowledgeEvent, {
+        eventId,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Event acknowledgment error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * POST /api/events/publish
+ * Manually publish an event to an agent.
+ * Body: { type: "...", targetAgent: "...", payload: {...} }
+ */
+http.route({
+  path: "/api/events/publish",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const body = await request.json();
+      const { type, targetAgent, payload } = body;
+
+      if (!type || !targetAgent || !payload) {
+        return new Response(
+          JSON.stringify({ error: "type, targetAgent, and payload are required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await ctx.runMutation(api.agentEvents.publishEventFromHTTP, {
+        type,
+        targetAgent: targetAgent.toLowerCase(),
+        payload,
+      });
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Event publish error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+export default http;

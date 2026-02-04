@@ -87,4 +87,13 @@ crons.interval(
 //   {}
 // );
 
+// AGT-247: Event Bus — Cleanup expired events every 5 minutes
+// Removes events older than 5 minutes that were never delivered
+crons.interval(
+  "cleanup-expired-events",
+  { minutes: 5 },
+  internal.agentEvents.cleanupExpiredEvents,
+  {}
+);
+
 export default crons;

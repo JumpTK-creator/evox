@@ -75,7 +75,33 @@ echo "=== $AGENT Agent Loop Starting (PID $$) ==="
 send_heartbeat "starting" "none"
 echo ""
 
+# AGT-247: Event subscription — track last event timestamp
+LAST_EVENT_TS=0
+
 while true; do
+  # AGT-247: Check for new events via event bus (real-time notifications)
+  EVENT_RESPONSE=$(curl -s "$CONVEX_URL/api/events/subscribe?agent=$AGENT&since=$LAST_EVENT_TS")
+  EVENT_COUNT=$(echo "$EVENT_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d.get('events',[])))" 2>/dev/null)
+
+  if [ -n "$EVENT_COUNT" ] && [ "$EVENT_COUNT" -gt 0 ]; then
+    echo "=== Received $EVENT_COUNT event(s) ==="
+    # Update last event timestamp
+    LAST_EVENT_TS=$(echo "$EVENT_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('timestamp',0))" 2>/dev/null)
+
+    # Acknowledge events
+    echo "$EVENT_RESPONSE" | python3 -c "
+import json, sys, subprocess
+data = json.load(sys.stdin)
+for event in data.get('events', []):
+    event_id = event.get('id')
+    if event_id:
+        subprocess.run(['curl', '-s', '-X', 'POST', '$CONVEX_URL/api/events/ack',
+                       '-H', 'Content-Type: application/json',
+                       '-d', json.dumps({'eventId': event_id})],
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+" 2>/dev/null
+  fi
+
   # Get next dispatch for this specific agent
   RESPONSE=$(curl -s "$CONVEX_URL/getNextDispatchForAgent?agent=$AGENT")
 
@@ -85,8 +111,9 @@ while true; do
   # Check if we got a task
   if [ -z "$DISPATCH_ID" ] || [ "$DISPATCH_ID" = "null" ] || [ -z "$TICKET" ] || [ "$TICKET" = "null" ]; then
     send_heartbeat "idle" "none"
-    echo "No tasks for $AGENT. Checking again in 60s..."
-    sleep 60
+    # AGT-247: Reduced polling interval from 60s to 10s (events provide instant notification)
+    echo "No tasks for $AGENT. Checking again in 10s..."
+    sleep 10
     continue
   fi
 
