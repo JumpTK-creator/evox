@@ -47,6 +47,31 @@ send_heartbeat() {
     -d "{\"agentName\":\"$AGENT\",\"status\":\"$status\",\"statusReason\":\"$task\"}" > /dev/null 2>&1 || true
 }
 
+# === SESSION END LOG ===
+CURRENT_TICKET="none"
+log_session_end() {
+  echo ""
+  echo "=== Session Ending (signal received) ==="
+  send_heartbeat "offline" "session_killed"
+
+  # Log to Convex learnings
+  curl -s -X POST "$CONVEX_URL/v2/learn" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"agent\": \"$AGENT\",
+      \"taskId\": \"$CURRENT_TICKET\",
+      \"taskTitle\": \"Session Terminated\",
+      \"summary\": \"Session killed during task: $CURRENT_TICKET. PID: $$. Time: $(date)\",
+      \"tags\": [\"session-end\", \"killed\"]
+    }" > /dev/null 2>&1 || true
+
+  echo "Session logged to Convex."
+  rm -f "$LOCK_FILE"
+}
+
+# Trap exit signals to log before dying
+trap 'log_session_end' EXIT SIGINT SIGTERM
+
 echo "=== $AGENT Agent Loop Starting (PID $$) ==="
 send_heartbeat "starting" "none"
 echo ""
@@ -67,6 +92,7 @@ while true; do
   fi
 
   echo "=== Task: $TICKET ==="
+  CURRENT_TICKET="$TICKET"
   send_heartbeat "working" "$TICKET"
 
   # Mark dispatch as running
