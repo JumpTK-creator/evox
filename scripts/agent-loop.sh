@@ -65,10 +65,18 @@ Start working now."
   echo ""
 
   # Run Claude - will exit when task complete
-  claude --dangerously-skip-permissions "$PROMPT"
+  if claude --dangerously-skip-permissions "$PROMPT"; then
+    # Claude exited successfully - mark dispatch as completed
+    echo ""
+    echo "=== $TICKET completed ==="
+    curl -s "$CONVEX_URL/markDispatchCompleted?dispatchId=$DISPATCH_ID" > /dev/null
+  else
+    # Claude exited with error - mark dispatch as failed
+    echo ""
+    echo "=== $TICKET failed ==="
+    curl -s "$CONVEX_URL/markDispatchFailed?dispatchId=$DISPATCH_ID&error=Claude%20exited%20with%20error" > /dev/null
+  fi
 
-  echo ""
-  echo "=== $TICKET session ended ==="
   echo "Checking for next task..."
   echo ""
 

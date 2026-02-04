@@ -1625,6 +1625,84 @@ http.route({
 });
 
 /**
+ * GET /markDispatchCompleted — Mark dispatch as completed (daemon calls this after Claude exits)
+ * Query params: dispatchId, result (optional)
+ */
+http.route({
+  path: "/markDispatchCompleted",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const dispatchId = url.searchParams.get("dispatchId");
+      const result = url.searchParams.get("result");
+
+      if (!dispatchId) {
+        return new Response(
+          JSON.stringify({ error: "dispatchId is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      await ctx.runMutation(api.dispatches.complete, {
+        dispatchId: dispatchId as Id<"dispatches">,
+        result: result ?? undefined,
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, dispatchId }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("markDispatchCompleted error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /markDispatchFailed — Mark dispatch as failed (daemon calls this on error)
+ * Query params: dispatchId, error
+ */
+http.route({
+  path: "/markDispatchFailed",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const dispatchId = url.searchParams.get("dispatchId");
+      const errorMsg = url.searchParams.get("error") ?? "Unknown error";
+
+      if (!dispatchId) {
+        return new Response(
+          JSON.stringify({ error: "dispatchId is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      await ctx.runMutation(api.dispatches.fail, {
+        dispatchId: dispatchId as Id<"dispatches">,
+        error: errorMsg,
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, dispatchId }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("markDispatchFailed error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
  * POST /createDispatch — Create a new dispatch (for Max to push work to agents)
  * Body: { agentName: "sam", command: "execute_ticket", ticket: "AGT-215" }
  */
