@@ -180,7 +180,7 @@ function AlertItem({
 
 /** Main CEO Dashboard */
 export function CEODashboard({ className }: CEODashboardProps) {
-  const now = Date.now();
+  const now = new Date().getTime();
   const todayStart = startOfDay(new Date()).getTime();
   const todayEnd = endOfDay(new Date()).getTime();
 

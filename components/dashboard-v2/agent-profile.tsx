@@ -79,10 +79,11 @@ export function AgentProfile({
   const notificationsForAgent = useQuery(api.notifications.getByAgent, { agent: agentId });
 
   // AGT-245: Brutal metrics - Cost tracking (last 7 days)
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const now = new Date().getTime();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
   const costData = useQuery(
     api.costs.getCostsByDateRange,
-    activeTab === "overview" ? { startTs: sevenDaysAgo, endTs: Date.now(), agentName: name.toLowerCase() } : "skip"
+    activeTab === "overview" ? { startTs: sevenDaysAgo, endTs: now, agentName: name.toLowerCase() } : "skip"
   );
 
   // AGT-245: Brutal metrics - Execution stats (last 24 hours)
@@ -234,7 +235,8 @@ export function AgentProfile({
             </span>
           )}
           {full?.lastHeartbeat != null && (() => {
-            const ageMs = Date.now() - full.lastHeartbeat;
+            const currentNow = new Date().getTime();
+            const ageMs = currentNow - full.lastHeartbeat;
             const isStale = ageMs >= 5 * 60 * 1000;
             return isStale ? (
               <span className="rounded bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 text-[10px] font-semibold uppercase">
@@ -394,7 +396,8 @@ export function AgentProfile({
                   <div>
                     <div className="text-lg font-semibold text-zinc-50">
                       {(() => {
-                        const ageMs = Date.now() - full.lastHeartbeat;
+                        const currentNow = new Date().getTime();
+                        const ageMs = currentNow - full.lastHeartbeat;
                         if (ageMs < 5 * 60 * 1000) return "Healthy";
                         if (ageMs < 15 * 60 * 1000) return "Stale";
                         return "Offline";
@@ -405,7 +408,8 @@ export function AgentProfile({
                   <div className={cn(
                     "h-4 w-4 rounded-full",
                     (() => {
-                      const ageMs = Date.now() - full.lastHeartbeat;
+                      const currentNow = new Date().getTime();
+                      const ageMs = currentNow - full.lastHeartbeat;
                       if (ageMs < 5 * 60 * 1000) return "bg-green-500";
                       if (ageMs < 15 * 60 * 1000) return "bg-yellow-500";
                       return "bg-gray-500";
@@ -545,7 +549,8 @@ export function AgentProfile({
               <p className="mt-1 text-sm text-zinc-400">
                 {full?.lastHeartbeat != null
                   ? (() => {
-                      const ageMs = Date.now() - full.lastHeartbeat;
+                      const currentNow = new Date().getTime();
+                      const ageMs = currentNow - full.lastHeartbeat;
                       if (ageMs < 5 * 60 * 1000) return "healthy";
                       if (ageMs < 15 * 60 * 1000) return "stale";
                       return "offline";

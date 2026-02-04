@@ -192,7 +192,7 @@ export function ElonDashboard({ className }: ElonDashboardProps) {
   const metrics = useMemo(() => {
     if (!tasks || !agents) return null;
 
-    const now = Date.now();
+    const now = new Date().getTime();
     const day24h = 24 * 60 * 60 * 1000;
 
     // Filter tasks

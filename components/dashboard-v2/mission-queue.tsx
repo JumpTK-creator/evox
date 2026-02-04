@@ -47,9 +47,10 @@ export function MissionQueue({
       };
     } else {
       // 30 days
+      const currentEnd = new Date().getTime();
       return {
         startTs: subDays(new Date(), 30).getTime(),
-        endTs: Date.now(),
+        endTs: currentEnd,
       };
     }
   }, [date, dateMode]);

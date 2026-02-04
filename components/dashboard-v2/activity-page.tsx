@@ -150,7 +150,7 @@ export function ActivityPage() {
 
                 {/* Timestamp */}
                 <span className="shrink-0 text-[10px] text-[#555555]">
-                  {formatDistanceToNow(event.timestamp ?? Date.now(), { addSuffix: false })}
+                  {formatDistanceToNow(event.timestamp ?? new Date().getTime(), { addSuffix: false })}
                 </span>
               </div>
             );
