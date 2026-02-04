@@ -16,7 +16,7 @@ import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 import { AGENT_SOULS, buildSystemPrompt, buildUserMessage, getRepoContext } from "./context";
 import { GITHUB_TOOLS, executeTool, ToolCallBlock } from "./tools";
-import { GitHubConfig } from "./github";
+import { GitHubConfig, commitChanges } from "./github";
 
 const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
 const MAX_STEPS = 50;
@@ -203,6 +203,7 @@ export const executeStep = internalAction({
       const newTotalTokens = execution.tokensUsed + inputTokens + outputTokens;
 
       let taskComplete = false;
+      let taskCompleteSummary = "";
       const toolResults: any[] = [];
 
       for (const block of data.content) {
@@ -211,7 +212,10 @@ export const executeStep = internalAction({
         }
         if (block.type === "tool_use") {
           await ctx.runMutation(internal.execution.engine.writeLog, { executionId, step, type: "tool_call", content: `🔧 ${block.name}(${JSON.stringify(block.input).slice(0, 200)})`, metadata: JSON.stringify({ tool: block.name, input: block.input }) });
-          if (block.name === "task_complete") taskComplete = true;
+          if (block.name === "task_complete") {
+            taskComplete = true;
+            taskCompleteSummary = block.input.summary || "Task completed";
+          }
           const result = await executeTool(block as ToolCallBlock, ghConfig, stagedChanges);
           await ctx.runMutation(internal.execution.engine.writeLog, { executionId, step, type: "tool_result", content: result.content.slice(0, 500), metadata: JSON.stringify({ tool: block.name, is_error: result.is_error ?? false }) });
           toolResults.push(result);
@@ -228,8 +232,40 @@ export const executeStep = internalAction({
       });
 
       if (taskComplete || data.stop_reason === "end_turn") {
-        await ctx.runMutation(internal.execution.engine.completeExecution, { executionId, status: "done" });
-        await ctx.runMutation(internal.execution.engine.writeLog, { executionId, step, type: "system", content: `✅ Complete! ${filesChanged.length} files staged. Tokens: ${newTotalTokens}`, metadata: JSON.stringify({ filesChanged, tokensUsed: newTotalTokens }) });
+        let commitSha: string | undefined;
+
+        // AGT-94: Auto-commit staged changes to GitHub
+        if (taskComplete && stagedChanges.size > 0) {
+          try {
+            await ctx.runMutation(internal.execution.engine.writeLog, {
+              executionId, step, type: "system",
+              content: `📤 Committing ${stagedChanges.size} files to GitHub...`
+            });
+
+            const commitMessage = `[EVOX] ${execution.agentName}: ${execution.taskId} — ${taskCompleteSummary}`;
+            const commitResult = await commitChanges(ghConfig, stagedChanges, commitMessage);
+            commitSha = commitResult.sha;
+
+            await ctx.runMutation(internal.execution.engine.writeLog, {
+              executionId, step, type: "commit",
+              content: `✅ Committed: ${commitResult.sha.slice(0, 7)}`,
+              metadata: JSON.stringify({ sha: commitResult.sha, filesCommitted: commitResult.filesCommitted })
+            });
+          } catch (error: any) {
+            // Log error but don't fail the execution
+            await ctx.runMutation(internal.execution.engine.writeLog, {
+              executionId, step, type: "error",
+              content: `⚠️ Commit failed: ${error.message}. Changes remain staged.`
+            });
+          }
+        }
+
+        await ctx.runMutation(internal.execution.engine.completeExecution, { executionId, status: "done", commitSha });
+        await ctx.runMutation(internal.execution.engine.writeLog, {
+          executionId, step, type: "system",
+          content: `✅ Complete! ${filesChanged.length} files ${commitSha ? 'committed' : 'staged'}. Tokens: ${newTotalTokens}`,
+          metadata: JSON.stringify({ filesChanged, tokensUsed: newTotalTokens, commitSha })
+        });
         return;
       }
 
