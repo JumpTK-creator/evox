@@ -188,6 +188,7 @@ export function CEODashboard({ className }: CEODashboardProps) {
   const agents = useQuery(api.agents.list) as AgentDoc[] | undefined;
   const tasks = useQuery(api.tasks.list) as TaskDoc[] | undefined;
   const dashboardStats = useQuery(api.dashboard.getStats, { startTs: todayStart, endTs: todayEnd });
+  const automationProgress = useQuery(api.automationMetrics.getProgress);
 
   // Get last 7 days of performance data
   const today = new Date().toISOString().split('T')[0];
@@ -215,18 +216,8 @@ export function CEODashboard({ className }: CEODashboardProps) {
     const totalAgents = agents.length;
     const teamHealth = totalAgents > 0 ? Math.round((activeAgents / totalAgents) * 100) : 0;
 
-    // Automation % = (automated tasks / total tasks completed today) * 100
-    // For now, assume tasks with agentName !== "Son" are automated
-    const completedToday = tasks.filter(t =>
-      t.status === "done" &&
-      (t.updatedAt >= todayStart && t.updatedAt <= todayEnd)
-    );
-    const automatedCount = completedToday.filter(t =>
-      t.agentName && t.agentName.toLowerCase() !== "son"
-    ).length;
-    const automationPercent = completedToday.length > 0
-      ? Math.round((automatedCount / completedToday.length) * 100)
-      : 0;
+    // Automation % — Real-time from AGT-257 automation metrics API
+    const automationPercent = automationProgress?.progressPercent || 0;
 
     // Velocity = tasks completed today
     const velocity = dashboardStats.taskCounts?.done || 0;
