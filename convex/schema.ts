@@ -71,6 +71,15 @@ export default defineSchema({
     linearUrl: v.optional(v.string()),
     // AGT-134: attribution for Standup (Son→max, Sam→sam, Leo→leo); group by agentName not assignee
     agentName: v.optional(v.string()),
+    // AGT-209: Approval Workflow
+    requiresApproval: v.optional(v.boolean()),
+    approvalStatus: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    )),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.number()),
   })
     .index("by_project", ["projectId"])
     .index("by_status", ["status"])

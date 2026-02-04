@@ -17,6 +17,7 @@ import type * as agentMemory from "../agentMemory.js";
 import type * as agentMessages from "../agentMessages.js";
 import type * as agentMessaging from "../agentMessaging.js";
 import type * as agents from "../agents.js";
+import type * as approval from "../approval.js";
 import type * as automation from "../automation.js";
 import type * as costs from "../costs.js";
 import type * as crons from "../crons.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   agentMessages: typeof agentMessages;
   agentMessaging: typeof agentMessaging;
   agents: typeof agents;
+  approval: typeof approval;
   automation: typeof automation;
   costs: typeof costs;
   crons: typeof crons;
