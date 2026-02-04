@@ -36,7 +36,6 @@ if [ -f "$LOCK_FILE" ]; then
 fi
 
 echo $$ > "$LOCK_FILE"
-trap "rm -f $LOCK_FILE" EXIT
 
 # === HEARTBEAT FUNCTION ===
 send_heartbeat() {
