@@ -1,6 +1,6 @@
 # Agent Dispatch Queue
 
-*Updated: Feb 3, 2026 — Session 15*
+*Updated: Feb 4, 2026 — Session 16*
 
 ---
 
@@ -8,11 +8,10 @@
 
 | Priority | Ticket | Task | Status |
 |----------|--------|------|--------|
-| 1 | **AGT-215** | Alert System — Push notifications for agent events | TODO |
-| 2 | AGT-216 | Auto-Recovery — Self-healing restart & retry | TODO |
-| 3 | AGT-214 | Cron Scheduler — Schedule agent tasks | TODO |
+| 1 | **AGT-216** | Auto-Recovery — Self-healing restart & retry | TODO |
+| 2 | AGT-214 | Cron Scheduler — Schedule agent tasks | TODO |
 
-**Instructions:** Start with AGT-215 (Alert System). Telegram integration first.
+**Instructions:** Start with AGT-216 (Auto-Recovery). Heartbeat timeout + exponential backoff.
 
 ---
 
@@ -20,13 +19,15 @@
 
 | Priority | Ticket | Task | Status |
 |----------|--------|------|--------|
-| 1 | **AGT-217** | Health Dashboard — Uptime, success rate, error trends | TODO |
+| — | — | Queue empty | — |
 
-**Instructions:** Wait for Sam to complete AGT-215/216 backend first. Then build Health Dashboard UI.
-
-**Dependency:** AGT-217 blocked by AGT-215, AGT-216
+**Status:** Waiting for new tasks.
 
 ---
+
+## Completed (Phase 8)
+- ✓ AGT-217: Health Dashboard (Leo)
+- ✓ AGT-215: Alert System (Sam)
 
 ## Completed (Phase 6-7)
 - ✓ AGT-212: Kill Switch (Sam + Leo)
