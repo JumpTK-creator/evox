@@ -96,4 +96,13 @@ crons.interval(
   {}
 );
 
+// AGT-250: Website Health Monitor — Check every 1 minute
+// Alerts via Telegram if site goes down
+crons.interval(
+  "website-health-check",
+  { minutes: 1 },
+  internal.healthMonitor.checkWebsite,
+  {}
+);
+
 export default crons;
