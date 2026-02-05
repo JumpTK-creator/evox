@@ -218,7 +218,7 @@ export function CEODashboard({ className }: CEODashboardProps) {
   const tasks = useQuery(api.tasks.list, { limit: 500 }) as TaskDoc[] | undefined;
   const dashboardStats = useQuery(api.dashboard.getStats, { startTs: todayStart, endTs: todayEnd });
   const automationProgress = useQuery(api.automationMetrics.getProgress);
-  const recentActivity = useQuery(api.agentActivity.list, { limit: 8 }) as ActivityEvent[] | undefined;
+  const recentActivity = useQuery(api.activityEvents.list, { limit: 8 }) as ActivityEvent[] | undefined;
 
   // Get performance metrics for cost
   const today = new Date().toISOString().split('T')[0];
