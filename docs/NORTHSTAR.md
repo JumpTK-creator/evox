@@ -32,20 +32,18 @@
 | Auto-test on PR | ✅ Done | GitHub Action `.github/workflows/test.yml` |
 | Auto-deploy | ✅ Done | Vercel auto-deploy on push to main |
 | 24/7 Operation | ✅ Done | tmux + terminal tabs (subscription) |
-| Sub-agent spawning | ❌ Todo | AGT-265 |
+| Sub-agent spawning | ✅ Done | AGT-265 |
 | Agent communication | ✅ Done | Convex messages |
-| Error recovery | ⚠️ Partial | AGT-263 exponential backoff |
+| Error recovery | ✅ Done | AGT-263 exponential backoff |
 
 ---
 
 ## Current Automation Rate
 
 ```
-█████████░ 90%
+██████████ 100%
 
-Remaining:
-1. Sub-agent spawning (AGT-265)
-2. Error recovery improvements (AGT-263)
+All core automation components complete!
 ```
 
 ---
@@ -121,9 +119,11 @@ Remaining:
 
 ## Next Steps (Priority Order)
 
-1. **AGT-263** — Exponential backoff for resilience
-2. **AGT-264** — Real-time activity dashboard
-3. **AGT-265** — Sub-agent spawning for parallel work
+All core automation complete. Future improvements:
+
+1. **Cost tracking** — Track token costs per task
+2. **Reply threading** — Comment thread replies
+3. **TypeScript cleanup** — Fix implicit any errors
 
 ## How to Run (Subscription Mode)
 
