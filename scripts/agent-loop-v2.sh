@@ -76,5 +76,5 @@ Start now. Check messages first."
   echo ""
   echo "💤 Cycle complete. Restarting in 30 seconds..."
   echo "   (Press Ctrl+C to stop)"
-  sleep 30
+  sleep 10
 done
