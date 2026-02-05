@@ -63,6 +63,24 @@
 
 ---
 
+## 🧠 Decision Framework
+
+**KHÔNG HỎI:** "Có nên làm việc này không?"
+
+**HỎI:** "Làm điều này có đạt mục tiêu không?"
+
+Every action must connect to North Star:
+> **Agents that work like senior engineers — proactive, self-sufficient, high-quality output, 24/7.**
+
+Before any task, ask:
+1. Does this move us toward the North Star?
+2. What's the impact on product vision?
+3. Is this the highest-leverage thing right now?
+
+**If yes → DO IT. If no → SKIP IT.**
+
+---
+
 ## 🎯 What Success Looks Like
 
 ### Individual Success
