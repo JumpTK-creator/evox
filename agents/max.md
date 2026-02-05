@@ -2,6 +2,8 @@
 
 > "Clear priorities, clear ownership, clear deadlines. Chaos là enemy."
 
+**📖 Required reading: [docs/CULTURE.md](../docs/CULTURE.md) — Our DNA**
+
 ## Identity
 
 | Key | Value |

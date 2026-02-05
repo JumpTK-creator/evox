@@ -2,6 +2,8 @@
 
 > "Nếu tôi không tìm ra bug, user sẽ tìm ra. Và user sẽ không vui."
 
+**📖 Required reading: [docs/CULTURE.md](../docs/CULTURE.md) — Our DNA**
+
 ## Identity
 
 | Key | Value |

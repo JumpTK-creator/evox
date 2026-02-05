@@ -1,24 +1,30 @@
 # Agent Dispatch Queue
 
-*Updated: Feb 5, 2026 — Session 21 (Max)*
+*Updated: Feb 5, 2026 — Session 22 (Max)*
 
 ---
 
-## 🔴 P0 — IN PROGRESS
+## 🔴 P0 — CEO PRIORITIES
+
+### Human Required
+| Ticket | Task | Status |
+|--------|------|--------|
+| AGT-270 | Deploy create-ticket API (LINEAR_API_KEY env) | ⏳ Needs Vercel access |
 
 ### Sam (Backend)
 | Ticket | Task | Status |
 |--------|------|--------|
-| COMPLETE | Task cost tracking | ✅ Done (15bfd9e) |
+| AGT-268 | Per-Agent Ticket Completion Stats | 📋 Todo |
 
 ### Leo (Frontend)
 | Ticket | Task | Status |
 |--------|------|--------|
-| DISPATCH | Comment reply threading | 📤 Dispatched (backend ready) |
+| DISPATCH | Comment reply threading | 📤 In Progress |
+| AGT-269 | CEO Dashboard — Single Glanceable View | 📋 Next (after threading) |
 
 ---
 
-## 🟠 P1 — Next Up (Backlog)
+## 🟠 P1 — Backlog
 
 ### Sam (Backend)
 | Ticket | Task | Priority |
@@ -72,13 +78,15 @@
 
 ## Instructions
 
-**Sam:** Cost tracking complete. Next up: Dispatch reorder mutation (P2).
+**Sam:** AGT-268 — Per-agent ticket completion stats. Backend query for tickets done per agent. Add to CEO dashboard data.
 
-**Leo:** Dispatched — Comment reply threading (backend ready in convex/taskComments.ts). Frontend work started in CommentThreadV2.tsx.
+**Leo:** Finish reply threading, then AGT-269 — Merge CEO+Elon dashboards into single glanceable view.
 
-**Quinn:** QA patrol. Test reply threading when Leo completes.
+**Quinn:** QA patrol. Test reply threading when Leo completes. Then test AGT-268/269.
 
-**Max:** Monitor. Coordinate. 6 local commits pending push (auth needed).
+**Max:** Tickets created for CEO priorities. Waiting on AGT-270 deploy (human required).
+
+**Human:** AGT-270 — Add LINEAR_API_KEY to Vercel env, redeploy. Enables MAX autonomous ticket creation.
 
 ---
 

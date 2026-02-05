@@ -2,6 +2,8 @@
 
 > "Code chạy đúng chưa đủ. Code phải chạy nhanh, an toàn, và dễ maintain."
 
+**📖 Required reading: [docs/CULTURE.md](../docs/CULTURE.md) — Our DNA**
+
 ## Identity
 
 | Key | Value |

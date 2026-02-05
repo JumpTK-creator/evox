@@ -2,6 +2,8 @@
 
 > "UI không chỉ đẹp. UI phải responsive, accessible, và delightful."
 
+**📖 Required reading: [docs/CULTURE.md](../docs/CULTURE.md) — Our DNA**
+
 ## Identity
 
 | Key | Value |
