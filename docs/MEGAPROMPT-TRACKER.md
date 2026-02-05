@@ -1,6 +1,6 @@
 # MEGAPROMPT TRACKER
 
-> Last updated: 2026-02-05 16:33 UTC
+> Last updated: 2026-02-05 16:57 UTC
 > Coordinator: MAX
 
 ## Status Overview
@@ -9,8 +9,8 @@
 |--------|-------|
 | In Progress | 2 |
 | Todo | 4 |
-| Backlog | 7 |
-| Blocked | 1 |
+| Backlog | 15 |
+| Subtasks Created | 8 |
 
 ## Critical Path
 
@@ -51,6 +51,37 @@ AGT-290 (API Fix) → AGT-292 (Agent Loop) → AGT-293 (Dashboard)
 - Notified core agents (SAM, LEO, QUINN, MAYA)
 - Set dependencies
 - AGT-290 identified as blocker
+
+### 2026-02-05 16:57
+- Updated PROCESSES.md with EPIC methodology
+- Created 8 subtasks (AGT-306 to AGT-313)
+- All subtasks <30 min per new process
+- DMed all agents with assignments:
+  - SAM: AGT-306, 307, 308
+  - COLE: AGT-309
+  - MAYA: AGT-310
+  - LEO: AGT-311, 312
+  - QUINN: AGT-313
+
+---
+
+## Subtask Breakdown
+
+### AGT-292: Autonomous Agent Loop (SAM)
+| Subtask | Description | Duration | Status |
+|---------|-------------|----------|--------|
+| AGT-306 | Fix markDispatch APIs | 20 min | Todo |
+| AGT-307 | Heartbeat monitoring | 30 min | Blocked |
+| AGT-308 | Auto-retry dispatches | 30 min | Blocked |
+
+### AGT-293: CEO Dashboard v2
+| Subtask | Description | Owner | Duration | Status |
+|---------|-------------|-------|----------|--------|
+| AGT-309 | Research patterns | COLE | 30 min | Todo |
+| AGT-310 | Design wireframes | MAYA | 30 min | Blocked by 309 |
+| AGT-311 | SystemHealthWidget | LEO | 30 min | Blocked by 310 |
+| AGT-312 | VelocityWidget | LEO | 30 min | Blocked by 310 |
+| AGT-313 | QA Review | QUINN | 30 min | Blocked by all |
 
 ---
 
