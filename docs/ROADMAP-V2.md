@@ -36,7 +36,7 @@
 | 1.6 | Dashboard v0.2 - Assemble & deploy | LEO | ✅ | AGT-314 |
 | 1.7 | Heartbeat UI (green/red dots) | LEO | ✅ | AGT-273 |
 | 1.8 | Fix markDispatch POST APIs | SAM | ✅ | AGT-306 |
-| 1.9 | Reset circuit breakers (7 agents) | SAM | ⬜ | — |
+| 1.9 | Reset circuit breakers (7 agents) | SAM | ✅ | — |
 | 1.10 | Auto-detect blockers & escalate | MAX | 🔄 | AGT-278 |
 | 1.11 | Agent work-loop stable | SAM | ✅ | — |
 | 1.12 | Auto-restart on crash | SAM | ✅ | — |
@@ -51,7 +51,7 @@
 | 1.21 | API: getChannelMessagesWithKeywords | SAM | ✅ | — |
 | 1.22 | AgentCommsWidget (3-5 keywords) | LEO | 🔄 | — |
 
-**Phase 1 Progress: 14/22 = 64%**
+**Phase 1 Progress: 15/22 = 68%**
 
 ---
 
@@ -63,7 +63,7 @@
 |---|------|-------|--------|--------|
 | 2.1 | Launchd daemon - auto-start agents | SAM | ⬜ | AGT-251 |
 | 2.2 | Direct Linear polling (no dispatch) | SAM | ⬜ | AGT-251 |
-| 2.3 | Self-improvement loop | SAM | ⬜ | AGT-280 |
+| 2.3 | Self-improvement loop | MAX/SAM | ✅ spec / ⬜ impl | AGT-280 |
 | 2.4 | Auto-restart crashed agents | SAM | ⬜ | — |
 | 2.5 | Circuit breaker pattern | SAM | ✅ | — |
 | 2.6 | Auto-recovery on stuck | SAM | ✅ | — |
@@ -81,9 +81,9 @@
 | 2.18 | Agent onboarding guide | ELLA | ⬜ | AGT-299 |
 | 2.19 | Alert design system | MAYA | ✅ | — |
 | 2.20 | Research self-healing patterns | COLE | ✅ | — |
-| 2.21 | Priority voting design | MAX | ⬜ | AGT-284 |
+| 2.21 | Priority voting design | MAX | ✅ | AGT-284 |
 
-**Phase 2 Progress: 9/21 = 43%**
+**Phase 2 Progress: 10/21 = 48%**
 
 ---
 
@@ -94,8 +94,8 @@
 | # | Task | Owner | Status | Ticket |
 |---|------|-------|--------|--------|
 | 3.1 | User feedback analysis | MAYA | ⬜ | AGT-282 |
-| 3.2 | Feature proposal system | ALL | ⬜ | AGT-283 |
-| 3.3 | Priority voting mechanism | MAX | ⬜ | AGT-284 |
+| 3.2 | Feature proposal system | ALL | ✅ spec | AGT-283 |
+| 3.3 | Priority voting mechanism | MAX | ✅ spec | AGT-284 |
 | 3.4 | Minimal-oversight shipping | SAM/LEO | ⬜ | AGT-288 |
 | 3.5 | Multi-project support | SAM | ⬜ | — |
 | 3.6 | Agent leveling system | SAM | ⬜ | AGT-121 |
@@ -115,7 +115,7 @@
 | 3.20 | Data visualization design | MAYA | ⬜ | — |
 | 3.21 | Roadmap monthly review | MAX | ⬜ | — |
 
-**Phase 3 Progress: 0/21 = 0%**
+**Phase 3 Progress: 2/21 = 10%**
 
 ---
 

@@ -281,7 +281,7 @@ components/evox/
 | Role | Name | Approved |
 |------|------|----------|
 | Design | MAYA | ✅ |
-| PM | MAX | ⏳ |
+| PM | MAX | ✅ |
 | Frontend | LEO | ⏳ |
 | Backend | SAM | ⏳ |
 

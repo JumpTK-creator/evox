@@ -86,7 +86,7 @@ Rationale: Self-healing is prerequisite for Agent-Led Development and Revenue-Ge
 |--------|---------|-------|--------|
 | [AGT-276](https://linear.app/affitorai/issue/AGT-276) | Auto-Retry Failed Tasks | Sam | ✅ Done |
 | [AGT-277](https://linear.app/affitorai/issue/AGT-277) | Git Rollback Mechanism | Sam | ✅ Done |
-| [AGT-278](https://linear.app/affitorai/issue/AGT-278) | Auto-Detect Blockers & Escalate | Max | ⏳ Backlog |
+| [AGT-278](https://linear.app/affitorai/issue/AGT-278) | Auto-Detect Blockers & Escalate | Max | 🔄 Spec done, subtasks created |
 | [AGT-279](https://linear.app/affitorai/issue/AGT-279) | Quinn Auto-Review on PR | Quinn | ✅ Done |
 | [AGT-280](https://linear.app/affitorai/issue/AGT-280) | Self-Improvement Loop | All | ⏳ Backlog |
 | [AGT-281](https://linear.app/affitorai/issue/AGT-281) | Health & Error Dashboard | Leo | ✅ Done |
