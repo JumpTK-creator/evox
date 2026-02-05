@@ -13,6 +13,34 @@
 set -euo pipefail
 
 # ============================================================================
+# SIGNAL HANDLING (graceful shutdown/restart)
+# ============================================================================
+
+SHUTDOWN_REQUESTED=0
+
+handle_signal() {
+  local signal="$1"
+  log "⚠️ Received $signal signal"
+
+  case "$signal" in
+    SIGTERM|SIGINT)
+      log "🛑 Graceful shutdown requested..."
+      SHUTDOWN_REQUESTED=1
+      update_agent_status "offline"
+      post_status "🛑 Agent shutting down (received $signal)"
+      ;;
+    SIGHUP)
+      log "🔄 Reload requested - refreshing Claude..."
+      force_restart_claude
+      ;;
+  esac
+}
+
+trap 'handle_signal SIGTERM' SIGTERM
+trap 'handle_signal SIGINT' SIGINT
+trap 'handle_signal SIGHUP' SIGHUP
+
+# ============================================================================
 # CONFIGURATION
 # ============================================================================
 
@@ -44,6 +72,8 @@ RETRY_BACKOFF_MULTIPLIER=2  # Exponential backoff multiplier
 
 # Tracking
 LAST_TASK_COMPLETE=0    # Timestamp of last completed task
+LAST_REFRESH=0          # Timestamp of last Claude refresh
+REFRESH_INTERVAL=7200   # Refresh Claude every 2 hours to prevent memory bloat
 
 # ============================================================================
 # SETUP
@@ -430,6 +460,13 @@ if ! ensure_session; then
 fi
 
 while true; do
+  # Check for graceful shutdown request
+  if [ "$SHUTDOWN_REQUESTED" -eq 1 ]; then
+    log "🛑 Shutdown requested. Exiting gracefully."
+    update_health "stopped" "$CYCLE"
+    exit 0
+  fi
+
   CYCLE=$((CYCLE + 1))
   CURRENT_TIME=$(date +%s)
 
@@ -442,6 +479,20 @@ while true; do
   # Rotate logs if needed (every 100 cycles)
   if [ $((CYCLE % 100)) -eq 0 ]; then
     rotate_logs
+  fi
+
+  # -------------------------------------------------------------------------
+  # PERIODIC REFRESH (prevent memory bloat - every 2 hours)
+  # -------------------------------------------------------------------------
+  if [ "$LAST_REFRESH" -eq 0 ]; then
+    LAST_REFRESH=$CURRENT_TIME
+  elif [ $((CURRENT_TIME - LAST_REFRESH)) -ge $REFRESH_INTERVAL ]; then
+    if is_claude_idle; then
+      log "🔄 Periodic refresh (every 2h) - restarting Claude to prevent memory bloat..."
+      force_restart_claude
+      LAST_REFRESH=$CURRENT_TIME
+      post_status "🔄 Periodic refresh complete (memory optimization)"
+    fi
   fi
 
   # -------------------------------------------------------------------------
