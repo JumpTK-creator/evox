@@ -35,11 +35,15 @@ POLL_INTERVAL=30        # Seconds between queue checks
 HEARTBEAT_INTERVAL=300  # Seconds between heartbeats (5 min)
 TASK_TIMEOUT=600        # Max seconds to wait for task completion (10 min)
 COMPLETION_CHECK=30     # Seconds between completion checks
+STUCK_THRESHOLD=1800    # 30 minutes without completing = stuck
 
 # Retry Configuration (AGT-276: Auto-retry failed tasks)
 MAX_TASK_RETRIES=3      # Max retries per dispatch before giving up
 RETRY_BACKOFF=60        # Seconds to wait before retry (base)
 RETRY_BACKOFF_MULTIPLIER=2  # Exponential backoff multiplier
+
+# Tracking
+LAST_TASK_COMPLETE=0    # Timestamp of last completed task
 
 # ============================================================================
 # SETUP
@@ -432,6 +436,14 @@ while true; do
   log ""
   log "🔄 Cycle $CYCLE - $(date '+%H:%M:%S')"
 
+  # Update health file for external monitoring
+  update_health "running" "$CYCLE"
+
+  # Rotate logs if needed (every 100 cycles)
+  if [ $((CYCLE % 100)) -eq 0 ]; then
+    rotate_logs
+  fi
+
   # -------------------------------------------------------------------------
   # 0. SELF-HEALING CHECK (ensure session exists)
   # -------------------------------------------------------------------------
@@ -487,6 +499,21 @@ while true; do
       send_heartbeat "busy"
     fi
     LAST_HEARTBEAT=$CURRENT_TIME
+  fi
+
+  # -------------------------------------------------------------------------
+  # 1.5. STUCK DETECTION (if no task completed in 30 min, force restart)
+  # -------------------------------------------------------------------------
+  if [ "$LAST_TASK_COMPLETE" -gt 0 ]; then
+    TIME_SINCE_COMPLETE=$((CURRENT_TIME - LAST_TASK_COMPLETE))
+    if [ "$TIME_SINCE_COMPLETE" -gt "$STUCK_THRESHOLD" ] && ! is_claude_idle; then
+      log "   ⚠️ No task completed in ${TIME_SINCE_COMPLETE}s - forcing restart..."
+      post_status "⚠️ Agent stuck (no activity for 30+ min). Force restarting..."
+      force_restart_claude
+      LAST_TASK_COMPLETE=$CURRENT_TIME  # Reset timer
+    fi
+  else
+    LAST_TASK_COMPLETE=$CURRENT_TIME  # Initialize on first cycle
   fi
 
   # -------------------------------------------------------------------------
@@ -627,6 +654,7 @@ GO. Execute this task now."
       clear_retry "$DISPATCH_ID"  # Clear retry tracking on success
       update_agent_status "idle"
       report_recovery_success
+      LAST_TASK_COMPLETE=$(date +%s)  # Update last complete time
       sleep 5  # Give Claude time to make API calls
       ;;
     1|2)
