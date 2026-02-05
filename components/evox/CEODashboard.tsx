@@ -158,11 +158,12 @@ function AgentRow({ agent, tasksToday, cost, isActive }: {
 }) {
   const status = agent.status?.toLowerCase() || "offline";
 
+  // AGT-285: Use consistent status colors per AGT-273
   const statusColors = {
-    online: "bg-emerald-500",
-    busy: "bg-blue-500",
-    idle: "bg-yellow-500",
-    offline: "bg-zinc-600",
+    online: "bg-green-500",
+    busy: "bg-yellow-500",
+    idle: "bg-zinc-500",
+    offline: "bg-red-500",
   };
 
   const dotColor = statusColors[status as keyof typeof statusColors] || statusColors.offline;

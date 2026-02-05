@@ -101,10 +101,11 @@ interface AgentLiveCardProps {
 }
 
 function AgentLiveCard({ agent }: AgentLiveCardProps) {
+  // AGT-285: Use consistent status colors per AGT-273
   const statusColors: Record<string, string> = {
     online: "bg-green-500",
     busy: "bg-yellow-500",
-    idle: "bg-gray-500",
+    idle: "bg-zinc-500",
     offline: "bg-red-500",
   };
 
