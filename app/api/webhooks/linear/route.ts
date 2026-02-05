@@ -145,11 +145,6 @@ export async function POST(request: NextRequest) {
     const payload = JSON.parse(bodyText);
     const { action, type, data, updatedFrom } = payload;
 
-    console.log(`Linear webhook: ${type} ${action}`, {
-      identifier: data?.identifier,
-      state: data?.state?.name,
-    });
-
     // Only process Issue updates with state changes
     if (type !== "Issue") {
       return NextResponse.json({
@@ -184,8 +179,6 @@ export async function POST(request: NextRequest) {
     const evoxPriority = mapLinearPriority(priority);
     const agentName = parseAgentFromIssue(data);
 
-    console.log(`Processing ${linearIdentifier}: status=${evoxStatus}, agent=${agentName}`);
-
     // Call Convex to upsert the task
     const convex = getConvexClient();
 
@@ -218,8 +211,6 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(data.updatedAt || Date.now()).getTime(),
     });
 
-    console.log(`Synced ${linearIdentifier}:`, result);
-
     // AGT-255: If this is an assignment change, fire agentEvent to wake agent
     if (isAssignmentChange && data.assignee) {
       const assigneeName = data.assignee.name?.toLowerCase();
@@ -241,8 +232,6 @@ export async function POST(request: NextRequest) {
               },
             },
           });
-
-          console.log(`Fired task_assigned event for ${assigneeName}: ${linearIdentifier}`);
         } catch (error) {
           console.error(`Failed to fire agentEvent for ${assigneeName}:`, error);
         }

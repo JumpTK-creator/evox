@@ -66,8 +66,6 @@ export async function POST(request: NextRequest) {
       assigneeName: assignee,
     });
 
-    console.log(`[create-ticket] ${from || "unknown"} created ${ticket.identifier}: ${title}`);
-
     // Log to Convex messages (optional)
     try {
       const convex = getConvexClient();
