@@ -63,7 +63,7 @@ POLL_INTERVAL=30        # Seconds between queue checks
 HEARTBEAT_INTERVAL=300  # Seconds between heartbeats (5 min)
 TASK_TIMEOUT=600        # Max seconds to wait for task completion (10 min)
 COMPLETION_CHECK=30     # Seconds between completion checks
-STUCK_THRESHOLD=1800    # 30 minutes without completing = stuck
+STUCK_THRESHOLD=600     # 10 minutes without activity = stuck
 
 # Retry Configuration (AGT-276: Auto-retry failed tasks)
 MAX_TASK_RETRIES=3      # Max retries per dispatch before giving up
@@ -75,6 +75,13 @@ LAST_TASK_COMPLETE=0    # Timestamp of last completed task
 LAST_REFRESH=0          # Timestamp of last Claude refresh
 REFRESH_INTERVAL=7200   # Refresh Claude every 2 hours to prevent memory bloat
 
+# Stats (for monitoring dashboard)
+STATS_TASKS_COMPLETED=0
+STATS_TASKS_FAILED=0
+STATS_SELF_ASSIGNED=0
+STATS_RECOVERIES=0
+STATS_START_TIME=$(date +%s)
+
 # ============================================================================
 # SETUP
 # ============================================================================
@@ -84,12 +91,40 @@ mkdir -p "$EVOX_DIR/logs"
 
 # Health check file - external monitors can check this
 HEALTH_FILE="$EVOX_DIR/logs/health-$AGENT_LOWER.json"
+HEARTBEAT_TIMESTAMP_FILE="$EVOX_DIR/logs/heartbeat-$AGENT_LOWER.ts"
+
+# Track last activity time (updates every cycle for supervisor monitoring)
+LAST_ACTIVITY=$(date +%s)
 
 # Update health status (for external monitoring)
 update_health() {
   local status="$1"
   local cycle="$2"
-  echo "{\"agent\":\"$AGENT_UPPER\",\"status\":\"$status\",\"cycle\":$cycle,\"timestamp\":$(date +%s),\"pid\":$$}" > "$HEALTH_FILE"
+  local uptime=$(($(date +%s) - STATS_START_TIME))
+  local now=$(date +%s)
+
+  # Update last activity timestamp
+  LAST_ACTIVITY=$now
+  echo "$now" > "$HEARTBEAT_TIMESTAMP_FILE"
+
+  cat > "$HEALTH_FILE" << EOF
+{
+  "agent": "$AGENT_UPPER",
+  "status": "$status",
+  "cycle": $cycle,
+  "timestamp": $now,
+  "last_activity": $now,
+  "pid": $$,
+  "uptime_seconds": $uptime,
+  "stats": {
+    "tasks_completed": $STATS_TASKS_COMPLETED,
+    "tasks_failed": $STATS_TASKS_FAILED,
+    "self_assigned": $STATS_SELF_ASSIGNED,
+    "recoveries": $STATS_RECOVERIES,
+    "tasks_per_hour": $(echo "scale=2; $STATS_TASKS_COMPLETED * 3600 / ($uptime + 1)" | bc 2>/dev/null || echo "0")
+  }
+}
+EOF
 }
 
 # Log rotation - keep logs under 10MB
@@ -706,6 +741,7 @@ GO. Execute this task now."
       update_agent_status "idle"
       report_recovery_success
       LAST_TASK_COMPLETE=$(date +%s)  # Update last complete time
+      STATS_TASKS_COMPLETED=$((STATS_TASKS_COMPLETED + 1))
       sleep 5  # Give Claude time to make API calls
       ;;
     1|2)
