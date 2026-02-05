@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AgentProfile } from "./agent-profile";
-import { cn } from "@/lib/utils";
+import { AgentStatusIndicator } from "@/components/evox/AgentStatusIndicator";
 
 interface AgentProfileModalProps {
   open: boolean;
@@ -21,13 +21,7 @@ const roleLabels: Record<string, string> = {
   backend: "Backend",
   frontend: "Frontend",
   qa: "QA",
-};
-
-const statusDot: Record<string, string> = {
-  online: "bg-green-500",
-  busy: "bg-yellow-500",
-  idle: "bg-gray-500",
-  offline: "bg-gray-500",
+  design: "Design",
 };
 
 /** AGT-181: Agent Profile Modal — opens on sidebar agent click, matches Settings modal style */
@@ -51,8 +45,6 @@ export function AgentProfileModal({
 
   if (!open || !agentId) return null;
 
-  const dot = statusDot[status?.toLowerCase() ?? "offline"] ?? statusDot.offline;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -71,7 +63,7 @@ export function AgentProfileModal({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-xl font-bold text-zinc-50">{name}</p>
-                <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full shadow-lg", dot)} aria-hidden />
+                <AgentStatusIndicator status={status} size="md" />
               </div>
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{roleLabels[role] ?? role}</p>
             </div>

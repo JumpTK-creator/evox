@@ -4,20 +4,14 @@ import { useState, useMemo } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { AgentProfile } from "./agent-profile";
 import { cn } from "@/lib/utils";
-
-/** AGT-169: Agent list item — status dot + name + role */
-const statusDot: Record<string, string> = {
-  online: "bg-green-500",
-  busy: "bg-yellow-500",
-  idle: "bg-gray-500",
-  offline: "bg-gray-500",
-};
+import { AgentStatusIndicator } from "@/components/evox/AgentStatusIndicator";
 
 const roleLabels: Record<string, string> = {
   pm: "PM",
   backend: "Backend",
   frontend: "Frontend",
   qa: "QA",
+  design: "Design",
 };
 
 interface Agent {
@@ -51,7 +45,6 @@ export function AgentsPage({ agents }: AgentsPageProps) {
         </div>
         <div className="flex-1 overflow-y-auto">
           {agents.map((agent) => {
-            const dot = statusDot[(agent.status ?? "offline").toLowerCase()] ?? statusDot.offline;
             const isSelected = selectedId === agent._id;
             return (
               <button
@@ -63,7 +56,7 @@ export function AgentsPage({ agents }: AgentsPageProps) {
                   isSelected ? "bg-[#222] text-zinc-50" : "hover:bg-[#1a1a1a] text-zinc-400"
                 )}
               >
-                <span className={cn("h-2 w-2 shrink-0 rounded-full border border-[#0a0a0a]", dot)} />
+                <AgentStatusIndicator status={agent.status} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{agent.name}</p>
                   <p className="text-[11px] text-zinc-500">{roleLabels[agent.role] ?? agent.role}</p>
