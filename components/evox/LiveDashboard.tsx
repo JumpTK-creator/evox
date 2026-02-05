@@ -12,13 +12,14 @@ export function LiveDashboard() {
   const agents = useQuery(api.agents.list);
   const recentActivity = useQuery(api.activityEvents.list, { limit: 10 });
   const doneTasks = useQuery(api.tasks.getByStatus, { status: "done" });
+  const costData = useQuery(api.costs.getCostsByAgent, {});
 
   const activeAgents = agents?.filter(
     (a) => a.status?.toLowerCase() === "online" || a.status?.toLowerCase() === "busy"
   );
 
   const todayCompleted = doneTasks?.length ?? 0;
-  const totalCost = 0; // TODO: Add cost tracking
+  const totalCost = costData?.totalCost ?? 0;
 
   return (
     <div className="min-h-screen bg-black p-8">
