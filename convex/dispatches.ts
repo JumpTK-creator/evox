@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { batchEnrichWithAgents, getAgentByName } from "./queryHelpers";
 
 /**
  * Phase 5: Execution Engine - Dispatch Management
@@ -114,69 +115,48 @@ export const fail = mutation({
 });
 
 // List all pending dispatches (with agent names), sorted by priority
+// Optimized: uses batch agent lookup instead of N+1 queries
 export const listPending = query({
   args: {},
   handler: async (ctx) => {
+    // Use priority index for pre-sorted results
     const dispatches = await ctx.db
       .query("dispatches")
-      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .withIndex("by_priority", (q) => q.eq("status", "pending"))
       .order("asc")
       .take(50);
 
-    // Sort by priority (0=URGENT first), then by createdAt
-    const sorted = dispatches.sort((a, b) => {
-      const priorityA = a.priority ?? 2;
-      const priorityB = b.priority ?? 2;
-      if (priorityA !== priorityB) return priorityA - priorityB;
-      return (a.createdAt ?? 0) - (b.createdAt ?? 0);
-    });
-
-    // Enrich with agent names
-    return Promise.all(
-      sorted.map(async (d) => {
-        const agent = await ctx.db.get(d.agentId);
-        return {
-          ...d,
-          agentName: agent?.name ?? "unknown",
-        };
-      })
-    );
+    // Batch enrich with agent names (single query instead of N)
+    return batchEnrichWithAgents(ctx.db, dispatches);
   },
 });
 
 // List active dispatches (pending + running) for UI display
+// Optimized: parallel queries + batch agent lookup
 export const listActive = query({
   args: {},
   handler: async (ctx) => {
-    // Get pending dispatches
-    const pending = await ctx.db
-      .query("dispatches")
-      .withIndex("by_status", (q) => q.eq("status", "pending"))
-      .order("asc")
-      .take(20);
-
-    // Get running dispatches
-    const running = await ctx.db
-      .query("dispatches")
-      .withIndex("by_status", (q) => q.eq("status", "running"))
-      .order("asc")
-      .take(10);
+    // Parallel fetch pending and running
+    const [pending, running] = await Promise.all([
+      ctx.db
+        .query("dispatches")
+        .withIndex("by_priority", (q) => q.eq("status", "pending"))
+        .order("asc")
+        .take(20),
+      ctx.db
+        .query("dispatches")
+        .withIndex("by_status", (q) => q.eq("status", "running"))
+        .order("asc")
+        .take(10),
+    ]);
 
     // Combine and sort by createdAt
-    const all = [...running, ...pending].sort((a, b) =>
-      (a.createdAt ?? 0) - (b.createdAt ?? 0)
+    const all = [...running, ...pending].sort(
+      (a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0)
     );
 
-    // Enrich with agent names
-    return Promise.all(
-      all.map(async (d) => {
-        const agent = await ctx.db.get(d.agentId);
-        return {
-          ...d,
-          agentName: agent?.name ?? "unknown",
-        };
-      })
-    );
+    // Batch enrich with agent names (single query instead of N)
+    return batchEnrichWithAgents(ctx.db, all);
   },
 });
 
@@ -216,6 +196,7 @@ export const get = query({
 });
 
 // Create dispatch from Linear webhook (auto-assign to agent by name)
+// Optimized: uses indexed agent lookup
 export const createFromLinear = mutation({
   args: {
     agentName: v.string(),
@@ -224,11 +205,8 @@ export const createFromLinear = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, { agentName, linearIdentifier, title, description }) => {
-    // Find agent by name (case-insensitive)
-    const agents = await ctx.db.query("agents").collect();
-    const agent = agents.find(
-      (a) => a.name.toUpperCase() === agentName.toUpperCase()
-    );
+    // Find agent by name using index (O(1) lookup)
+    const agent = await getAgentByName(ctx.db, agentName);
 
     if (!agent) {
       console.log(`Agent not found: ${agentName}`);
@@ -335,13 +313,11 @@ export const cleanupDuplicates = mutation({
 });
 
 // Get dispatch queue summary for an agent
+// Optimized: uses indexed agent lookup instead of collect-then-find
 export const getQueueForAgent = query({
   args: { agentName: v.string() },
   handler: async (ctx, { agentName }) => {
-    const agents = await ctx.db.query("agents").collect();
-    const agent = agents.find(
-      (a) => a.name.toUpperCase() === agentName.toUpperCase()
-    );
+    const agent = await getAgentByName(ctx.db, agentName);
 
     if (!agent) {
       return { error: "agent_not_found", pending: 0, running: 0 };
@@ -404,15 +380,13 @@ export const cleanupStuckDispatches = mutation({
 });
 
 // Force reset all running dispatches for an agent (emergency cleanup)
+// Optimized: uses indexed agent lookup
 export const resetAgentDispatches = mutation({
   args: {
     agentName: v.string(),
   },
   handler: async (ctx, { agentName }) => {
-    const agents = await ctx.db.query("agents").collect();
-    const agent = agents.find(
-      (a) => a.name.toUpperCase() === agentName.toUpperCase()
-    );
+    const agent = await getAgentByName(ctx.db, agentName);
 
     if (!agent) {
       return { error: "agent_not_found", reset: 0 };
@@ -443,6 +417,7 @@ export const resetAgentDispatches = mutation({
 });
 
 // AGT-279: Create dispatch for PR code review (always dispatched to Quinn)
+// Optimized: uses indexed agent lookup
 export const createPRReviewDispatch = mutation({
   args: {
     prNumber: v.number(),
@@ -456,11 +431,8 @@ export const createPRReviewDispatch = mutation({
     action: v.string(), // "opened", "synchronize", "reopened"
   },
   handler: async (ctx, args) => {
-    // Find Quinn agent
-    const agents = await ctx.db.query("agents").collect();
-    const quinn = agents.find(
-      (a) => a.name.toUpperCase() === "QUINN"
-    );
+    // Find Quinn agent using index (O(1) lookup)
+    const quinn = await getAgentByName(ctx.db, "QUINN");
 
     if (!quinn) {
       console.log("Quinn agent not found, cannot dispatch PR review");

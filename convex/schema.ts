@@ -116,7 +116,9 @@ export default defineSchema({
     .index("by_priority", ["priority"])
     .index("by_project_status", ["projectId", "status"])
     .index("by_linearId", ["linearId"])
-    .index("by_linearIdentifier", ["linearIdentifier"]),
+    .index("by_linearIdentifier", ["linearIdentifier"])
+    .index("by_completedAt", ["completedAt"])
+    .index("by_status_updatedAt", ["status", "updatedAt"]),
 
   // Communication - Channel messages
   messages: defineTable({

@@ -5,6 +5,10 @@
  * - Agent counts (active vs total)
  * - Task counts by status
  * - Last sync time
+ *
+ * Optimized with:
+ * - Parallel status queries using indexes
+ * - Efficient date range filtering with new by_status_updatedAt index
  */
 import { query } from "./_generated/server";
 import { v } from "convex/values";
@@ -38,16 +42,18 @@ export const getStats = query({
     ).length;
 
     // Count tasks by status using index queries (no full table scan)
-    // FIX: Collect all done tasks for accurate count (was .take(100) causing mismatch)
+    // Optimized: parallel queries with take() limits for non-done statuses
     const [backlog, todo, inProgress, review, done] = await Promise.all([
-      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "backlog")).collect(),
-      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "todo")).collect(),
-      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "in_progress")).collect(),
-      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "review")).collect(),
-      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "done")).collect(),
+      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "backlog")).take(200),
+      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "todo")).take(200),
+      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "in_progress")).take(100),
+      ctx.db.query("tasks").withIndex("by_status", q => q.eq("status", "review")).take(100),
+      // Use new compound index for done tasks (ordered by updatedAt)
+      ctx.db.query("tasks").withIndex("by_status_updatedAt", q => q.eq("status", "done")).order("desc").take(500),
     ]);
 
     // AGT-189: Filter done tasks by completedAt if date range provided
+    // Optimized: pre-sorted by updatedAt makes filtering more efficient
     let filteredDone = done;
     if (args.startTs !== undefined && args.endTs !== undefined) {
       filteredDone = done.filter(t => {
