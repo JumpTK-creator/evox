@@ -4,8 +4,8 @@
 
 set -e
 
-AGENTS=("max" "sam" "leo" "quinn")
-PORTS=(7681 7682 7683 7684)
+AGENTS=("max" "sam" "leo" "quinn" "maya")
+PORTS=(7681 7682 7683 7684 7685)
 
 echo "🖥️  Starting ttyd terminal servers..."
 
@@ -37,8 +37,9 @@ echo "   MAX:   http://localhost:7681"
 echo "   SAM:   http://localhost:7682"
 echo "   LEO:   http://localhost:7683"
 echo "   QUINN: http://localhost:7684"
+echo "   MAYA:  http://localhost:7685"
 echo ""
 echo "🌐 Remote access via Tailscale:"
-echo "   http://100.106.143.17:7681-7684"
+echo "   http://100.106.143.17:7681-7685"
 echo ""
 echo "💡 Terminals are read-only for safety"

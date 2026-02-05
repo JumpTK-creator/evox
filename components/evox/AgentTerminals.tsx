@@ -19,6 +19,7 @@ const AGENTS: AgentConfig[] = [
   { id: 'sam', name: 'SAM', role: 'Backend', port: 7682, color: '#10B981', tunnelUrl: 'https://evox-sam.loca.lt' },
   { id: 'leo', name: 'LEO', role: 'Frontend', port: 7683, color: '#F59E0B', tunnelUrl: 'https://evox-leo.loca.lt' },
   { id: 'quinn', name: 'QUINN', role: 'QA', port: 7684, color: '#8B5CF6', tunnelUrl: 'https://evox-quinn.loca.lt' },
+  { id: 'maya', name: 'MAYA', role: 'Design', port: 7685, color: '#EC4899', tunnelUrl: 'https://evox-maya.loca.lt' },
 ];
 
 // Base URL for ttyd - will be configured per environment
