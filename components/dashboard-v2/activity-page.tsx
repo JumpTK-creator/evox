@@ -56,7 +56,7 @@ export function ActivityPage() {
   const [filter, setFilter] = useState<EventFilter>("all");
 
   // Real-time subscription to activity events
-  // @ts-expect-error TS2589 deep type instantiation in Convex types
+  // @ts-expect-error - TS2589 deep type instantiation in Convex types
   const events: ActivityEvent[] | undefined = useQuery(api.activityEvents.list, { limit: 50 });
 
   // Filter events based on selected filter (by category)
