@@ -111,6 +111,8 @@ export default defineSchema({
     // AGT-316: Blocker Detection
     blockedBy: v.optional(v.array(v.string())),  // Task IDs or Linear identifiers blocking this task
     blockedSince: v.optional(v.number()),         // Timestamp when task became blocked
+    // AGT-318: Escalation Tiers
+    escalationTier: v.optional(v.number()),       // 0=none, 1=T1, 2=T2, 3=T3, 4=T4
   })
     .index("by_project", ["projectId"])
     .index("by_status", ["status"])

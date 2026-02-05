@@ -10,8 +10,16 @@
  */
 import { v } from "convex/values";
 import { query, internalAction, internalMutation, internalQuery } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+
+// AGT-318: Escalation tier thresholds (in milliseconds)
+const ESCALATION_THRESHOLDS = {
+  T1: 0,                    // Immediate on detection
+  T2: 30 * 60 * 1000,       // 30 minutes
+  T3: 60 * 60 * 1000,       // 60 minutes
+  T4: 4 * 60 * 60 * 1000,   // 4 hours
+} as const;
 
 /**
  * Resolve a single blocker string to its task and status.
@@ -150,14 +158,131 @@ export const clearTaskBlocked = internalMutation({
     const task = await ctx.db.get(taskId);
     if (!task) return;
     if (task.blockedSince) {
-      await ctx.db.patch(taskId, { blockedSince: undefined });
+      await ctx.db.patch(taskId, {
+        blockedSince: undefined,
+        escalationTier: undefined,
+      });
     }
   },
 });
 
 /**
- * Cron action: scan in_progress tasks, detect blockers, fire alerts.
+ * AGT-318: Internal mutation to update escalation tier on a task.
+ */
+export const setEscalationTier = internalMutation({
+  args: {
+    taskId: v.id("tasks"),
+    tier: v.number(),
+  },
+  handler: async (ctx, { taskId, tier }) => {
+    await ctx.db.patch(taskId, { escalationTier: tier });
+  },
+});
+
+/**
+ * Determine the escalation tier based on how long a task has been blocked.
+ */
+function calculateEscalationTier(blockedSince: number): number {
+  const duration = Date.now() - blockedSince;
+  if (duration >= ESCALATION_THRESHOLDS.T4) return 4;
+  if (duration >= ESCALATION_THRESHOLDS.T3) return 3;
+  if (duration >= ESCALATION_THRESHOLDS.T2) return 2;
+  return 1;
+}
+
+/**
+ * AGT-318: Execute escalation action for a given tier.
+ * Each tier only fires once — tracked by escalationTier on the task.
+ */
+async function executeEscalation(
+  ctx: {
+    runQuery: (ref: any, args: any) => Promise<any>;
+    runMutation: (ref: any, args: any) => Promise<any>;
+    runAction: (ref: any, args: any) => Promise<any>;
+  },
+  task: any,
+  tier: number,
+  unresolvedNames: string[]
+) {
+  const taskLabel = task.linearIdentifier ?? task.title;
+  const blockerList = unresolvedNames.join(", ");
+
+  switch (tier) {
+    case 1: {
+      // T1: DM assigned agent (immediate)
+      if (task.agentName) {
+        await ctx.runMutation(api.messaging.sendDM, {
+          from: "system",
+          to: task.agentName.toLowerCase(),
+          content: `[Blocker T1] Your task ${taskLabel} is blocked by: ${blockerList}`,
+          relatedTaskId: task._id,
+          priority: "normal" as const,
+        });
+      }
+      // Also fire the existing alert
+      await ctx.runAction(internal.alerts.triggerTaskBlocked, {
+        taskId: task._id,
+        linearIdentifier: task.linearIdentifier,
+        taskTitle: task.title,
+        blockedBy: blockerList,
+        agentName: task.agentName,
+      });
+      break;
+    }
+    case 2: {
+      // T2: DM blocker's assignee (30 min)
+      for (const blockerRef of unresolvedNames) {
+        const blocker = await ctx.runQuery(
+          internal.blockerDetection.resolveBlockerQuery,
+          { blockerRef }
+        );
+        if (blocker.id) {
+          const blockerTask = await ctx.runQuery(
+            internal.blockerDetection.getTaskAssignee,
+            { taskId: blocker.id }
+          );
+          if (blockerTask?.agentName) {
+            await ctx.runMutation(api.messaging.sendDM, {
+              from: "system",
+              to: blockerTask.agentName.toLowerCase(),
+              content: `[Blocker T2] Your task ${blocker.identifier} is blocking ${taskLabel}. Blocked for 30+ min.`,
+              priority: "urgent" as const,
+            });
+          }
+        }
+      }
+      break;
+    }
+    case 3: {
+      // T3: Escalate to MAX (PM) via DM + #dev post (60 min)
+      await ctx.runMutation(api.messaging.sendDM, {
+        from: "system",
+        to: "max",
+        content: `[Blocker T3] Task ${taskLabel} blocked 60+ min by: ${blockerList}. Agent: ${task.agentName ?? "unassigned"}. Needs PM intervention.`,
+        relatedTaskId: task._id,
+        priority: "urgent" as const,
+      });
+      break;
+    }
+    case 4: {
+      // T4: Post to #ceo channel (4 hours)
+      await ctx.runMutation(api.messaging.sendDM, {
+        from: "system",
+        to: "max",
+        content: `[Blocker T4 — CEO ESCALATION] Task ${taskLabel} blocked 4+ hours by: ${blockerList}. Human attention required.`,
+        relatedTaskId: task._id,
+        priority: "urgent" as const,
+      });
+      break;
+    }
+  }
+}
+
+/**
+ * Cron action: scan in_progress tasks, detect blockers, fire tiered alerts.
  * Runs every 5 minutes via crons.ts.
+ *
+ * AGT-318: Escalation tiers (T1-T4) based on blockedSince duration.
  */
 export const detectBlockedTasks = internalAction({
   args: {},
@@ -167,7 +292,7 @@ export const detectBlockedTasks = internalAction({
     );
 
     let newlyBlocked = 0;
-    let stillBlocked = 0;
+    let escalated = 0;
     let resolved = 0;
 
     for (const task of tasksWithBlockers) {
@@ -184,21 +309,30 @@ export const detectBlockedTasks = internalAction({
 
       if (hasUnresolvedBlocker) {
         if (!task.blockedSince) {
-          // Newly blocked — set timestamp and fire alert
+          // Newly blocked — set timestamp, start at T1
           await ctx.runMutation(
             internal.blockerDetection.markTaskBlocked,
             { taskId: task._id, blockedSince: Date.now() }
           );
-          await ctx.runAction(internal.alerts.triggerTaskBlocked, {
-            taskId: task._id,
-            linearIdentifier: task.linearIdentifier,
-            taskTitle: task.title,
-            blockedBy: unresolvedNames.join(", "),
-            agentName: task.agentName,
-          });
+          await ctx.runMutation(
+            internal.blockerDetection.setEscalationTier,
+            { taskId: task._id, tier: 1 }
+          );
+          await executeEscalation(ctx, task, 1, unresolvedNames);
           newlyBlocked++;
         } else {
-          stillBlocked++;
+          // Already blocked — check if escalation tier should increase
+          const currentTier = task.escalationTier ?? 1;
+          const newTier = calculateEscalationTier(task.blockedSince);
+
+          if (newTier > currentTier) {
+            await ctx.runMutation(
+              internal.blockerDetection.setEscalationTier,
+              { taskId: task._id, tier: newTier }
+            );
+            await executeEscalation(ctx, task, newTier, unresolvedNames);
+            escalated++;
+          }
         }
       } else {
         // All blockers resolved — clear blocked state
@@ -212,9 +346,9 @@ export const detectBlockedTasks = internalAction({
       }
     }
 
-    if (newlyBlocked > 0 || resolved > 0) {
+    if (newlyBlocked > 0 || escalated > 0 || resolved > 0) {
       console.log(
-        `[BlockerDetection] newly_blocked=${newlyBlocked} still_blocked=${stillBlocked} resolved=${resolved}`
+        `[BlockerDetection] new=${newlyBlocked} escalated=${escalated} resolved=${resolved}`
       );
     }
   },
@@ -242,6 +376,18 @@ export const resolveBlockerQuery = internalQuery({
   args: { blockerRef: v.string() },
   handler: async (ctx, { blockerRef }) => {
     return await resolveBlocker(ctx, blockerRef);
+  },
+});
+
+/**
+ * AGT-318: Get task assignee info for escalation T2 notifications.
+ */
+export const getTaskAssignee = internalQuery({
+  args: { taskId: v.id("tasks") },
+  handler: async (ctx, { taskId }) => {
+    const task = await ctx.db.get(taskId);
+    if (!task) return null;
+    return { agentName: task.agentName, title: task.title };
   },
 });
 
