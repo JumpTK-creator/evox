@@ -9,7 +9,7 @@
 ### Sam (Backend)
 | Ticket | Task | Status |
 |--------|------|--------|
-| DISPATCH | Task cost tracking | 📤 Dispatched |
+| COMPLETE | Task cost tracking | ✅ Done (15bfd9e) |
 
 ### Leo (Frontend)
 | Ticket | Task | Status |
@@ -53,6 +53,8 @@
 
 ## Completed Today (Session 16-21)
 
+- ✅ Task cost tracking — Queries + HTTP endpoints (Sam)
+- ✅ AGT-80: Git activity feed (Sam)
 - ✅ Reply threading backend — Schema + API (Sam/Max)
 - ✅ AGT-265: Auto-spawn sub-agents for large tasks (Sam)
 - ✅ AGT-264: Real-time agent activity feed (Sam)
@@ -70,7 +72,7 @@
 
 ## Instructions
 
-**Sam:** Dispatched — Task cost tracking. Pick up from queue.
+**Sam:** Cost tracking complete. Next up: Dispatch reorder mutation (P2).
 
 **Leo:** Dispatched — Comment reply threading (backend ready in convex/taskComments.ts). Frontend work started in CommentThreadV2.tsx.
 
