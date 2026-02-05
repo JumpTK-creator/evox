@@ -19,6 +19,7 @@ import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { startOfDay, endOfDay, formatDistanceToNow, subDays } from "date-fns";
 import { AgentTerminals } from "./AgentTerminals";
+import { SystemHealthWidget } from "./SystemHealthWidget";
 
 interface CEODashboardProps {
   className?: string;
@@ -497,16 +498,19 @@ export function CEODashboard({ className }: CEODashboardProps) {
           </div>
         </div>
 
-        {/* Alerts */}
+        {/* Alerts + System Health */}
         <div className="flex flex-col min-h-0">
           <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2">
             Alerts
           </div>
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2 mb-3">
             {alerts.map((alert, i) => (
               <AlertRow key={i} {...alert} />
             ))}
           </div>
+
+          {/* System Health Widget — AGT-281 */}
+          <SystemHealthWidget className="mb-3" />
 
           {/* Quick Stats */}
           <div className="pt-2 border-t border-white/10">
