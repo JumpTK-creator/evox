@@ -189,7 +189,46 @@ while true; do
   DISPATCH_ID=$(echo "$DISPATCH_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('dispatchId') or '')" 2>/dev/null || echo "")
 
   if [ -z "$DISPATCH_ID" ] || [ "$DISPATCH_ID" = "null" ]; then
-    log "   😴 No pending work"
+    log "   📭 No dispatch in queue"
+
+    # -------------------------------------------------------------------------
+    # SELF-ASSIGNMENT MODE (North Star: KHÔNG BAO GIỜ IDLE)
+    # -------------------------------------------------------------------------
+    log "   🔍 Entering self-assignment mode..."
+
+    if session_exists && is_claude_idle; then
+      # Build self-assignment prompt for Claude
+      SELF_ASSIGN_PROMPT="You have no assigned dispatch. Time to SELF-ASSIGN work.
+
+## SELF-ASSIGNMENT PROTOCOL (from docs/AGENT-AUTONOMY.md)
+
+1. Check Linear backlog for unassigned tickets matching your skills
+2. Check docs/ROADMAP.md for items in current phase
+3. Check recent commits for bugs to fix
+4. Enter improvement mode: refactor, test, document
+
+## YOUR SKILLS (from agents/$AGENT_LOWER.md)
+Read your agent file to know your territory.
+
+## RULES
+- KHÔNG BAO GIỜ IDLE > 5 min
+- Align with NORTH-STAR.md
+- Ship > Perfect
+
+## ACTION
+Pick ONE task and execute it. When done, report to #dev:
+curl -X POST '$EVOX_API/postToChannel' -H 'Content-Type: application/json' -d '{\"channel\":\"dev\",\"from\":\"$AGENT_UPPER\",\"message\":\"🔄 Self-assigned: [what you did]\"}'
+
+GO. Find work. Ship something."
+
+      log "   📤 Sending self-assignment prompt to Claude..."
+      send_to_tmux "$SELF_ASSIGN_PROMPT"
+
+      # Wait shorter time for self-assigned work
+      log "   ⏳ Waiting for self-assigned work (max 300s)..."
+      wait_for_completion 300 || true
+    fi
+
     log "   ⏳ Sleeping ${POLL_INTERVAL}s..."
     sleep "$POLL_INTERVAL"
     continue
