@@ -69,8 +69,8 @@
 | Priority | Ticket | Description | Assignee | Status |
 |----------|--------|-------------|----------|--------|
 | P0 | AGT-270 | Deploy create-ticket API (LINEAR_API_KEY) | Human | ⏳ Waiting |
-| P1 | AGT-268 | Per-agent ticket completion stats | SAM | 📋 Todo |
-| P1 | AGT-269 | CEO Dashboard single glanceable view | LEO | 📋 Todo |
+| P1 | AGT-268 | Per-agent ticket completion stats | SAM | ✅ Done |
+| P1 | AGT-269 | CEO Dashboard single glanceable view | LEO | ✅ Done |
 | P2 | — | Auto-sync CEO backlog to dashboard | SAM | Future |
 
 ---

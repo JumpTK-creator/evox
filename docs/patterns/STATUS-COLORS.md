@@ -20,10 +20,10 @@ status === "Online" ? "green" : "gray"
 const statusColors: Record<string, string> = {
   online: "bg-green-500",
   busy: "bg-yellow-500",
-  idle: "bg-gray-400",
+  idle: "bg-zinc-500",
   offline: "bg-red-500",
 };
-const color = statusColors[status.toLowerCase()] ?? "bg-gray-400";
+const color = statusColors[status.toLowerCase()] ?? "bg-zinc-500";
 ```
 
 ## Standard Color Map
@@ -32,7 +32,7 @@ const color = statusColors[status.toLowerCase()] ?? "bg-gray-400";
 |--------|-------|----------------|
 | online | Green | `bg-green-500` |
 | busy | Yellow | `bg-yellow-500` |
-| idle | Gray | `bg-gray-400` |
+| idle | Gray | `bg-zinc-500` |
 | offline | Red | `bg-red-500` |
 
 ## Task Status Colors

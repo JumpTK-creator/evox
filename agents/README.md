@@ -16,7 +16,7 @@ Thư mục này chứa **identity thống nhất** cho mỗi agent. Mỗi agent 
 | Agent | Role | File | Status |
 |-------|------|------|--------|
 | ALEX | DevOps Engineer | alex.md | Planned |
-| ELLA | Content Writer | ella.md | Planned |
+| ELLA | Content Writer | [ella.md](./ella.md) | Active |
 | NOVA | Security Engineer | nova.md | Planned |
 | IRIS | Data Engineer | iris.md | Planned |
 | COLE | Research Engineer | cole.md | Planned |

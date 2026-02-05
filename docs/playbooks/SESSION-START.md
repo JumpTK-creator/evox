@@ -1,7 +1,7 @@
 # Playbook: Session Start
 
 **When:** Every new Claude Code / Cursor session
-**Who:** All agents (Max, Sam, Leo)
+**Who:** All agents (Sam, Leo, Quinn, Max, Maya, Ella)
 **Time:** ~30 seconds
 
 ## Boot Sequence

@@ -95,40 +95,40 @@ export function ActivityFeed({ limit = 20, className }: ActivityFeedProps) {
         return (
           <div
             key={event._id}
-            className="flex items-center gap-2 border-b border-[#222222] px-3 py-2 transition-colors hover:bg-[#1a1a1a]"
+            className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 border-b border-[#222222] px-2 sm:px-3 py-2 transition-colors hover:bg-[#1a1a1a]"
           >
             {/* Icon */}
-            <span className="shrink-0 text-sm">{config.icon}</span>
+            <span className="shrink-0 text-xs sm:text-sm">{config.icon}</span>
 
             {/* Agent name */}
-            <span className="w-10 shrink-0 truncate text-xs font-medium text-[#fafafa]">
+            <span className="w-8 sm:w-10 shrink-0 truncate text-[10px] sm:text-xs font-medium text-[#fafafa]">
               {agentName}
             </span>
 
             {/* Action verb */}
-            <span className={cn("shrink-0 text-xs", config.color)}>
+            <span className={cn("shrink-0 text-[10px] sm:text-xs", config.color)}>
               {verb}
             </span>
 
             {/* Ticket ID */}
             {ticketId && (
-              <span className="shrink-0 font-mono text-xs text-[#fafafa]">
+              <span className="shrink-0 font-mono text-[10px] sm:text-xs text-[#fafafa]">
                 {ticketId}
               </span>
             )}
 
             {/* Action detail (e.g., → In Progress) */}
             {actionDetail && (
-              <span className="shrink-0 text-xs text-[#888888]">
+              <span className="shrink-0 text-[10px] sm:text-xs text-[#888888]">
                 {actionDetail}
               </span>
             )}
 
             {/* Spacer */}
-            <span className="flex-1" />
+            <span className="hidden sm:block flex-1" />
 
             {/* Timestamp */}
-            <span className="shrink-0 text-[10px] text-[#555555]">
+            <span className="shrink-0 text-[9px] sm:text-[10px] text-[#555555] ml-auto sm:ml-0">
               {formatDistanceToNow(event.timestamp ?? now, { addSuffix: false })}
             </span>
           </div>

@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { startOfDay, endOfDay, formatDistanceToNow, subDays } from "date-fns";
 import { AgentTerminals } from "./AgentTerminals";
 import { SystemHealthWidget } from "./SystemHealthWidget";
+import { AgentCommunicationFeed } from "./AgentCommunicationFeed";
 
 interface CEODashboardProps {
   className?: string;

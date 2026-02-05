@@ -26,7 +26,8 @@ const MESSAGE_TYPE_COLORS: Record<MessageType, string> = {
 export function CommunicationLog({ className }: CommunicationLogProps) {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<MessageType | null>(null);
-  const [showAnalytics, setShowAnalytics] = useState(true);
+  // Hide analytics by default on mobile (check via window width on mount)
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // Fetch messages with filters
   const messagesArgs = useMemo(() => {
@@ -69,12 +70,12 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
   return (
     <div className={cn("flex flex-col h-full bg-[#0a0a0a]", className)}>
       {/* Header */}
-      <div className="border-b border-[#222] px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-[#222] px-3 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
           <div>
-            <h2 className="text-xl font-bold text-white">Communication Log</h2>
-            <p className="text-sm text-zinc-500 mt-1">
-              Real-time agent messages across the system
+            <h2 className="text-lg sm:text-xl font-bold text-white">Communication Log</h2>
+            <p className="text-xs sm:text-sm text-zinc-500 mt-0.5 sm:mt-1">
+              Real-time agent messages
             </p>
           </div>
           <button
@@ -138,12 +139,12 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-hidden flex">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
         {/* Messages Feed */}
         <div
           className={cn(
             "overflow-y-auto",
-            showAnalytics ? "flex-1 border-r border-[#222]" : "w-full"
+            showAnalytics ? "flex-1 md:border-r border-[#222]" : "w-full"
           )}
         >
           {messages === undefined ? (
@@ -163,26 +164,26 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
               </div>
             </div>
           ) : (
-            <div className="p-6 space-y-3">
+            <div className="p-3 sm:p-6 space-y-2 sm:space-y-3">
               {messages.map((msg: any) => (
                 <div
                   key={msg._id}
-                  className="bg-[#0f0f0f] border border-[#222] rounded-lg p-4 hover:border-[#333] transition-colors"
+                  className="bg-[#0f0f0f] border border-[#222] rounded-lg p-3 sm:p-4 hover:border-[#333] transition-colors"
                 >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">
+                  {/* Header - Stack on mobile */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-2 mb-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                      <span className="text-base sm:text-lg">
                         {msg.fromAgent?.avatar ?? "?"}
                       </span>
-                      <span className="text-sm font-medium text-white uppercase">
+                      <span className="text-xs sm:text-sm font-medium text-white uppercase">
                         {msg.fromAgent?.name ?? "Unknown"}
                       </span>
                       <span className="text-zinc-600">→</span>
-                      <span className="text-lg">
+                      <span className="text-base sm:text-lg">
                         {msg.toAgent?.avatar ?? "?"}
                       </span>
-                      <span className="text-sm font-medium text-white uppercase">
+                      <span className="text-xs sm:text-sm font-medium text-white uppercase">
                         {msg.toAgent?.name ?? "Unknown"}
                       </span>
                     </div>
@@ -195,7 +196,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
                       >
                         {msg.type}
                       </span>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-[10px] sm:text-xs text-zinc-500">
                         {formatTime(msg.timestamp)}
                       </span>
                     </div>
@@ -225,9 +226,9 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
           )}
         </div>
 
-        {/* Analytics Panel */}
+        {/* Analytics Panel - Full width on mobile, fixed on desktop */}
         {showAnalytics && (
-          <div className="w-80 overflow-y-auto bg-[#0a0a0a] p-6">
+          <div className="w-full md:w-72 lg:w-80 overflow-y-auto bg-[#0a0a0a] p-4 sm:p-6 border-t md:border-t-0 border-[#222]">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
               Analytics
             </h3>
