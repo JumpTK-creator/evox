@@ -3255,4 +3255,136 @@ http.route({
   }),
 });
 
+// ============================================================
+// COST TRACKING ENDPOINTS
+// ============================================================
+
+/**
+ * GET /getTaskCosts — Get cost data for a specific task
+ * Query params: taskId (required) - either Convex ID or linearIdentifier (AGT-XXX)
+ */
+http.route({
+  path: "/getTaskCosts",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const taskId = url.searchParams.get("taskId");
+
+      if (!taskId) {
+        return new Response(
+          JSON.stringify({ error: "taskId query parameter is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // If taskId looks like "AGT-XXX", look up by linearIdentifier
+      let task;
+      if (taskId.toUpperCase().startsWith("AGT-")) {
+        const allTasks = await ctx.runQuery(api.tasks.list, {});
+        task = allTasks.find(
+          (t) => t.linearIdentifier?.toUpperCase() === taskId.toUpperCase()
+        );
+      } else {
+        // Assume it's a Convex ID
+        task = await ctx.runQuery(api.tasks.get, { id: taskId as Id<"tasks"> });
+      }
+
+      if (!task) {
+        return new Response(
+          JSON.stringify({ error: `Task not found: ${taskId}` }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get task with costs
+      const taskWithCosts = await ctx.runQuery(api.tasks.getWithCosts, {
+        id: task._id,
+      });
+
+      return new Response(JSON.stringify(taskWithCosts), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Get task costs error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /getCostSummary — Get cost summary across all tasks
+ * Query params: startTs, endTs (optional) - time range in milliseconds
+ */
+http.route({
+  path: "/getCostSummary",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const startTs = url.searchParams.get("startTs");
+      const endTs = url.searchParams.get("endTs");
+
+      const summary = await ctx.runQuery(api.tasks.getCostSummary, {
+        startTs: startTs ? parseInt(startTs, 10) : undefined,
+        endTs: endTs ? parseInt(endTs, 10) : undefined,
+      });
+
+      return new Response(JSON.stringify(summary), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Get cost summary error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /getTasksWithCosts — List tasks with their cost data
+ * Query params: status (optional), limit (optional, max 100)
+ */
+http.route({
+  path: "/getTasksWithCosts",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const status = url.searchParams.get("status") as
+        | "backlog"
+        | "todo"
+        | "in_progress"
+        | "review"
+        | "done"
+        | null;
+      const limitStr = url.searchParams.get("limit");
+      const limit = limitStr ? Math.min(parseInt(limitStr, 10), 100) : 50;
+
+      const tasks = await ctx.runQuery(api.tasks.listWithCosts, {
+        status: status || undefined,
+        limit,
+      });
+
+      return new Response(JSON.stringify({ tasks, count: tasks.length }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Get tasks with costs error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
 export default http;

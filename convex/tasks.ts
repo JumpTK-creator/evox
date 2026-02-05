@@ -988,3 +988,223 @@ export const syncStatusFromLinear = mutation({
     return task._id;
   },
 });
+
+// ============================================================================
+// COST TRACKING QUERIES
+// ============================================================================
+
+/**
+ * Get tasks with their aggregated cost data
+ * Joins tasks with costLogs to provide cost-per-task visibility
+ */
+export const listWithCosts = query({
+  args: {
+    projectId: v.optional(v.id("projects")),
+    limit: v.optional(v.number()),
+    status: v.optional(v.union(
+      v.literal("backlog"),
+      v.literal("todo"),
+      v.literal("in_progress"),
+      v.literal("review"),
+      v.literal("done")
+    )),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(args.limit ?? 100, 500);
+
+    // Get tasks based on filters
+    let tasksQuery;
+    if (args.status) {
+      tasksQuery = ctx.db
+        .query("tasks")
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .order("desc");
+    } else {
+      tasksQuery = ctx.db.query("tasks").order("desc");
+    }
+
+    const tasks = await tasksQuery.take(limit);
+
+    // Filter by project if specified
+    const filteredTasks = args.projectId
+      ? tasks.filter((t) => t.projectId === args.projectId)
+      : tasks;
+
+    // Get cost data for each task
+    const tasksWithCosts = await Promise.all(
+      filteredTasks.map(async (task) => {
+        const costs = await ctx.db
+          .query("costLogs")
+          .withIndex("by_task", (q) => q.eq("taskId", task._id))
+          .collect();
+
+        const totalInputTokens = costs.reduce((sum, c) => sum + c.inputTokens, 0);
+        const totalOutputTokens = costs.reduce((sum, c) => sum + c.outputTokens, 0);
+        const totalCost = costs.reduce((sum, c) => sum + c.cost, 0);
+
+        return {
+          ...task,
+          costData: {
+            totalInputTokens,
+            totalOutputTokens,
+            totalTokens: totalInputTokens + totalOutputTokens,
+            totalCost,
+            logCount: costs.length,
+          },
+        };
+      })
+    );
+
+    return tasksWithCosts;
+  },
+});
+
+/**
+ * Get a single task with its full cost breakdown
+ */
+export const getWithCosts = query({
+  args: {
+    id: v.id("tasks"),
+  },
+  handler: async (ctx, args) => {
+    const task = await ctx.db.get(args.id);
+    if (!task) return null;
+
+    const costs = await ctx.db
+      .query("costLogs")
+      .withIndex("by_task", (q) => q.eq("taskId", args.id))
+      .order("desc")
+      .collect();
+
+    const totalInputTokens = costs.reduce((sum, c) => sum + c.inputTokens, 0);
+    const totalOutputTokens = costs.reduce((sum, c) => sum + c.outputTokens, 0);
+    const totalCost = costs.reduce((sum, c) => sum + c.cost, 0);
+
+    // Group costs by agent
+    const costsByAgent: Record<string, {
+      agentName: string;
+      inputTokens: number;
+      outputTokens: number;
+      cost: number;
+      entries: number;
+    }> = {};
+
+    for (const cost of costs) {
+      if (!costsByAgent[cost.agentName]) {
+        costsByAgent[cost.agentName] = {
+          agentName: cost.agentName,
+          inputTokens: 0,
+          outputTokens: 0,
+          cost: 0,
+          entries: 0,
+        };
+      }
+      costsByAgent[cost.agentName].inputTokens += cost.inputTokens;
+      costsByAgent[cost.agentName].outputTokens += cost.outputTokens;
+      costsByAgent[cost.agentName].cost += cost.cost;
+      costsByAgent[cost.agentName].entries += 1;
+    }
+
+    return {
+      ...task,
+      costData: {
+        totalInputTokens,
+        totalOutputTokens,
+        totalTokens: totalInputTokens + totalOutputTokens,
+        totalCost,
+        logCount: costs.length,
+        byAgent: Object.values(costsByAgent),
+        recentLogs: costs.slice(0, 10), // Last 10 cost entries
+      },
+    };
+  },
+});
+
+/**
+ * Get cost summary across all tasks (for dashboard)
+ */
+export const getCostSummary = query({
+  args: {
+    startTs: v.optional(v.number()),
+    endTs: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const startTs = args.startTs ?? Date.now() - 24 * 60 * 60 * 1000; // Default: last 24h
+    const endTs = args.endTs ?? Date.now();
+
+    // Get all cost logs in the time range
+    const allCosts = await ctx.db
+      .query("costLogs")
+      .withIndex("by_timestamp")
+      .collect();
+
+    const filteredCosts = allCosts.filter(
+      (c) => c.timestamp >= startTs && c.timestamp <= endTs
+    );
+
+    // Group by task
+    const costsByTask = new Map<string, {
+      taskId: Id<"tasks"> | undefined;
+      linearIdentifier: string | undefined;
+      inputTokens: number;
+      outputTokens: number;
+      cost: number;
+      entries: number;
+    }>();
+
+    for (const cost of filteredCosts) {
+      const key = cost.taskId?.toString() ?? "no_task";
+      const existing = costsByTask.get(key);
+      if (existing) {
+        existing.inputTokens += cost.inputTokens;
+        existing.outputTokens += cost.outputTokens;
+        existing.cost += cost.cost;
+        existing.entries += 1;
+      } else {
+        costsByTask.set(key, {
+          taskId: cost.taskId,
+          linearIdentifier: cost.linearIdentifier,
+          inputTokens: cost.inputTokens,
+          outputTokens: cost.outputTokens,
+          cost: cost.cost,
+          entries: 1,
+        });
+      }
+    }
+
+    // Get task details for the ones with IDs
+    const taskCosts = Array.from(costsByTask.values());
+    const tasksWithDetails = await Promise.all(
+      taskCosts.map(async (tc) => {
+        if (!tc.taskId) {
+          return {
+            ...tc,
+            taskTitle: "Unassigned work",
+            taskStatus: "unknown",
+          };
+        }
+        const task = await ctx.db.get(tc.taskId);
+        return {
+          ...tc,
+          taskTitle: task?.title ?? "Unknown task",
+          taskStatus: task?.status ?? "unknown",
+        };
+      })
+    );
+
+    // Sort by cost descending
+    tasksWithDetails.sort((a, b) => b.cost - a.cost);
+
+    return {
+      startTs,
+      endTs,
+      totalCost: filteredCosts.reduce((sum, c) => sum + c.cost, 0),
+      totalTokens: filteredCosts.reduce(
+        (sum, c) => sum + c.inputTokens + c.outputTokens,
+        0
+      ),
+      taskCount: costsByTask.size,
+      costsByTask: tasksWithDetails.slice(0, 20), // Top 20 by cost
+    };
+  },
+});
