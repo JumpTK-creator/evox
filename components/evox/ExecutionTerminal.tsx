@@ -9,6 +9,8 @@ import { formatDistanceToNow } from "date-fns";
 interface ExecutionTerminalProps {
   className?: string;
   defaultAgent?: string;
+  /** Hide the internal header bar (agent dropdown, status). Use when parent provides its own controls. */
+  hideHeader?: boolean;
 }
 
 type ExecutionLog = {
@@ -67,13 +69,13 @@ const statusConfig: Record<ExecutionStatus, { label: string; color: string; puls
   error: { label: "Error", color: "bg-red-500", pulse: false },
 };
 
-const AGENTS = ["sam", "leo", "max"] as const;
+const AGENTS = ["max", "sam", "leo", "quinn"] as const;
 
 /**
  * AGT-196: Execution Terminal
  * Live terminal showing Claude Code output with tool call formatting
  */
-export function ExecutionTerminal({ className, defaultAgent = "sam" }: ExecutionTerminalProps) {
+export function ExecutionTerminal({ className, defaultAgent = "sam", hideHeader = false }: ExecutionTerminalProps) {
   const [selectedAgent, setSelectedAgent] = useState<string>(defaultAgent);
   const [autoScroll, setAutoScroll] = useState(true);
   const [expandAll, setExpandAll] = useState(false);
@@ -130,59 +132,60 @@ export function ExecutionTerminal({ className, defaultAgent = "sam" }: Execution
 
   return (
     <div className={cn("flex flex-col bg-[#0a0a0f] rounded-lg border border-[#222222] overflow-hidden", className)}>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#222222] px-3 py-2">
-        <div className="flex items-center gap-3">
-          <span className="text-sm">🖥️</span>
-          <span className="text-xs font-medium uppercase tracking-wider text-[#888888]">
-            Execution Log
-          </span>
+      {/* Header — hidden when parent provides its own controls */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between border-b border-[#222222] px-3 py-2">
+          <div className="flex items-center gap-3">
+            <span className="text-sm">🖥️</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-[#888888]">
+              Execution Log
+            </span>
 
-          {/* Agent selector */}
-          <select
-            value={selectedAgent}
-            onChange={(e) => setSelectedAgent(e.target.value)}
-            className="rounded border border-[#333333] bg-[#1a1a1a] px-2 py-1 text-xs text-[#fafafa] focus:border-[#3b82f6] focus:outline-none"
-          >
-            {AGENTS.map((agent) => (
-              <option key={agent} value={agent}>
-                {agent.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Status indicator */}
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "h-2 w-2 rounded-full",
-                statusInfo.color,
-                statusInfo.pulse && "animate-pulse"
-              )}
-            />
-            <span className="text-[10px] text-[#888888]">{statusInfo.label}</span>
+            {/* Agent selector */}
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value)}
+              className="rounded border border-[#333333] bg-[#1a1a1a] px-2 py-1 text-xs text-[#fafafa] focus:border-[#3b82f6] focus:outline-none"
+            >
+              {AGENTS.map((agent) => (
+                <option key={agent} value={agent}>
+                  {agent.toUpperCase()}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Controls */}
-          <button
-            type="button"
-            onClick={() => setExpandAll(!expandAll)}
-            className="rounded px-2 py-1 text-[10px] text-[#555555] hover:bg-white/5 hover:text-[#888888]"
-            title={expandAll ? "Collapse" : "Expand all"}
-          >
-            {expandAll ? "−" : "+"}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Status indicator */}
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  statusInfo.color,
+                  statusInfo.pulse && "animate-pulse"
+                )}
+              />
+              <span className="text-[10px] text-[#888888]">{statusInfo.label}</span>
+            </div>
+
+            {/* Controls */}
+            <button
+              type="button"
+              onClick={() => setExpandAll(!expandAll)}
+              className="rounded px-2 py-1 text-[10px] text-[#555555] hover:bg-white/5 hover:text-[#888888]"
+              title={expandAll ? "Collapse" : "Expand all"}
+            >
+              {expandAll ? "−" : "+"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Log content */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto p-3 font-mono text-[13px] leading-relaxed"
-        style={{ minHeight: 200, maxHeight: 400 }}
+        className="flex-1 overflow-auto p-3 font-mono text-[13px] leading-relaxed min-h-[200px]"
       >
         {!logs || logs.length === 0 ? (
           <div className="flex h-full items-center justify-center text-xs text-[#555555]">

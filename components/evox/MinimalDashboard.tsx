@@ -132,6 +132,7 @@ export function MinimalDashboard() {
             <ExecutionTerminal
               key={activeTab}
               defaultAgent={terminalAgent}
+              hideHeader
               className="h-full rounded-none border-0"
             />
           </div>
