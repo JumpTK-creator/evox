@@ -156,37 +156,93 @@ log ""
 
 # ============================================================================
 # API FUNCTIONS (Using deployed endpoints with retry)
+# Task 2.4: Rate limit handling with exponential backoff
 # ============================================================================
 
-# Retry wrapper for API calls (never give up on network)
+# Rate limit tracking
+RATE_LIMIT_HITS=0
+RATE_LIMIT_BACKOFF=30  # Base backoff for rate limits (30 seconds)
+
+# Retry wrapper for API calls with rate limit handling
 api_call_with_retry() {
   local url="$1"
   local method="${2:-GET}"
   local data="${3:-}"
-  local max_retries=3
+  local max_retries=5
   local retry=0
 
   while [ $retry -lt $max_retries ]; do
+    local http_code
     local result
+    local temp_file=$(mktemp)
+
+    # Make request and capture both response and HTTP code
     if [ "$method" = "POST" ]; then
-      result=$(curl -s -X POST "$url" -H "Content-Type: application/json" -d "$data" 2>/dev/null)
+      http_code=$(curl -s -w "%{http_code}" -o "$temp_file" -X POST "$url" \
+        -H "Content-Type: application/json" -d "$data" 2>/dev/null)
     else
-      result=$(curl -s "$url" 2>/dev/null)
+      http_code=$(curl -s -w "%{http_code}" -o "$temp_file" "$url" 2>/dev/null)
     fi
 
-    # Check if we got a response
-    if [ -n "$result" ] && [ "$result" != "" ]; then
+    result=$(cat "$temp_file" 2>/dev/null)
+    rm -f "$temp_file"
+
+    # Success case (2xx)
+    if [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
       echo "$result"
       return 0
     fi
 
-    retry=$((retry + 1))
-    log "   ⚠️ API call failed, retry $retry/$max_retries..."
-    sleep $((retry * 2))
+    # Rate limit case (429)
+    if [ "$http_code" = "429" ]; then
+      RATE_LIMIT_HITS=$((RATE_LIMIT_HITS + 1))
+      local backoff=$((RATE_LIMIT_BACKOFF * (2 ** retry)))
+      # Cap at 5 minutes
+      [ "$backoff" -gt 300 ] && backoff=300
+
+      log "   🚫 Rate limited (429). Backing off ${backoff}s... (hit #$RATE_LIMIT_HITS)"
+
+      # Report rate limit if it's happening frequently
+      if [ "$RATE_LIMIT_HITS" -ge 3 ]; then
+        post_status "⚠️ Rate limited $RATE_LIMIT_HITS times. Slowing down."
+      fi
+
+      sleep "$backoff"
+      retry=$((retry + 1))
+      continue
+    fi
+
+    # Server error (5xx) - retry with normal backoff
+    if [[ "$http_code" =~ ^5[0-9][0-9]$ ]]; then
+      log "   ⚠️ Server error ($http_code), retry $((retry + 1))/$max_retries..."
+      sleep $((retry * 2 + 1))
+      retry=$((retry + 1))
+      continue
+    fi
+
+    # Client error (4xx except 429) - don't retry, return error
+    if [[ "$http_code" =~ ^4[0-9][0-9]$ ]]; then
+      log "   ❌ Client error ($http_code): $result"
+      echo "$result"
+      return 1
+    fi
+
+    # Empty response or network error
+    if [ -z "$result" ] || [ "$http_code" = "000" ]; then
+      log "   ⚠️ Network error, retry $((retry + 1))/$max_retries..."
+      sleep $((retry * 2 + 1))
+      retry=$((retry + 1))
+      continue
+    fi
+
+    # Unknown case - return what we got
+    echo "$result"
+    return 0
   done
 
-  # Return fallback
-  echo '{"error":"network_failure"}'
+  # Max retries exceeded
+  log "   ❌ Max retries exceeded for API call"
+  echo '{"error":"max_retries_exceeded"}'
   return 1
 }
 
@@ -195,27 +251,27 @@ get_next_dispatch() {
   api_call_with_retry "$EVOX_API/getNextDispatchForAgent?agent=$AGENT_UPPER"
 }
 
-# Mark dispatch as running (claim it)
+# Mark dispatch as running (claim it) - with rate limit handling
 mark_running() {
   local dispatch_id="$1"
-  curl -s "$EVOX_API/markDispatchRunning?dispatchId=$dispatch_id" 2>/dev/null || echo '{"error":"failed"}'
+  api_call_with_retry "$EVOX_API/markDispatchRunning?dispatchId=$dispatch_id"
 }
 
-# Mark dispatch as completed
+# Mark dispatch as completed - with rate limit handling
 mark_completed() {
   local dispatch_id="$1"
   local result="$2"
   # URL encode the result
   local encoded_result=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$result'))" 2>/dev/null || echo "completed")
-  curl -s "$EVOX_API/markDispatchCompleted?dispatchId=$dispatch_id&result=$encoded_result" 2>/dev/null || echo '{"error":"failed"}'
+  api_call_with_retry "$EVOX_API/markDispatchCompleted?dispatchId=$dispatch_id&result=$encoded_result"
 }
 
-# Mark dispatch as failed
+# Mark dispatch as failed - with rate limit handling
 mark_failed() {
   local dispatch_id="$1"
   local error="$2"
   local encoded_error=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$error'))" 2>/dev/null || echo "failed")
-  curl -s "$EVOX_API/markDispatchFailed?dispatchId=$dispatch_id&error=$encoded_error" 2>/dev/null || echo '{"error":"failed"}'
+  api_call_with_retry "$EVOX_API/markDispatchFailed?dispatchId=$dispatch_id&error=$encoded_error"
 }
 
 # ============================================================================

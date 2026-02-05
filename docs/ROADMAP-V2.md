@@ -67,7 +67,7 @@
 | 2.6 | Auto-recovery on stuck | SAM | ✅ | — |
 | 2.7 | Context auto-compact | SAM | 🔄 | — |
 | 2.8 | Rate limit handling | SAM | ⬜ | — |
-| 2.9 | CEO dashboard v2 wireframes | MAYA | ⬜ | AGT-310 |
+| 2.9 | CEO dashboard v2 wireframes | MAYA | ✅ | AGT-310 |
 | 2.10 | Build SystemHealthWidget v2 | LEO | ⬜ | AGT-311 |
 | 2.11 | Build VelocityWidget v2 | LEO | ⬜ | AGT-312 |
 | 2.12 | Mobile responsive dashboard | LEO | ✅ | — |
@@ -77,7 +77,7 @@
 | 2.16 | Integration tests - Convex | QUINN | ⬜ | AGT-295 |
 | 2.17 | API documentation update | ALEX | ⬜ | AGT-296 |
 | 2.18 | Agent onboarding guide | ELLA | ⬜ | AGT-299 |
-| 2.19 | Alert design system | MAYA | ⬜ | — |
+| 2.19 | Alert design system | MAYA | 🔄 | — |
 | 2.20 | Research self-healing patterns | COLE | 🔄 | — |
 | 2.21 | Priority voting design | MAX | ⬜ | AGT-284 |
 
