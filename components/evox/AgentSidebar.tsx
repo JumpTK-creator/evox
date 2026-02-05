@@ -22,6 +22,7 @@ const roleLabels: Record<string, string> = {
   backend: "Backend",
   frontend: "Frontend",
   qa: "QA",
+  design: "Design",
 };
 
 /** Agent order: MAX → SAM → LEO → QUINN (AGT-233) */
