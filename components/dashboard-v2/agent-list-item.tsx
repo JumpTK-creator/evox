@@ -2,21 +2,16 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { AgentStatusIndicator } from "@/components/evox/AgentStatusIndicator";
 
 type AgentStatus = "online" | "idle" | "offline" | "busy";
-
-const statusDotColors: Record<AgentStatus, string> = {
-  online: "bg-green-500",
-  busy: "bg-yellow-500",
-  idle: "bg-gray-500",
-  offline: "bg-gray-500",
-};
 
 const roleLabels: Record<string, string> = {
   pm: "PM",
   backend: "Backend",
   frontend: "Frontend",
   qa: "QA",
+  design: "Design",
 };
 
 interface AgentListItemProps {
@@ -31,9 +26,6 @@ interface AgentListItemProps {
 
 
 export function AgentListItem({ name, role, status, avatar, isSelected, onClick }: AgentListItemProps) {
-  const normalizedStatus = (status?.toLowerCase?.() ?? "offline") as AgentStatus;
-  const dotColor = statusDotColors[normalizedStatus] ?? statusDotColors.offline;
-
   return (
     <button
       type="button"
@@ -45,7 +37,7 @@ export function AgentListItem({ name, role, status, avatar, isSelected, onClick 
           : "hover:bg-[#1a1a1a] text-zinc-400"
       )}
     >
-      <span className={cn("h-2 w-2 shrink-0 rounded-full border border-[#0a0a0a]", dotColor)} />
+      <AgentStatusIndicator status={status} size="sm" />
       <Avatar className="h-5 w-5 shrink-0 border border-[#222]">
         <AvatarFallback className="bg-[#111] text-[10px] text-zinc-400">{avatar}</AvatarFallback>
       </Avatar>
