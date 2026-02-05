@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+/**
+ * ActivityFeed - IMPACT FEED
+ * Shows: commits with files/lines, task completions, deploys
+ * Hides: heartbeats, "posted to #dev", noise
+ */
+
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { formatDistanceToNow } from "date-fns";
@@ -11,46 +17,42 @@ interface ActivityFeedProps {
   className?: string;
 }
 
-/** Activity event type */
+// Types
 type ActivityEvent = {
   _id: string;
   eventType?: string;
   agentName?: string;
   linearIdentifier?: string;
+  description?: string;
   timestamp?: number;
   metadata?: { toStatus?: string; assignedTo?: string };
 };
 
-/** Event type icons and colors */
-const eventConfig: Record<string, { icon: string; color: string }> = {
-  created: { icon: "🟢", color: "text-green-500" },
-  status_change: { icon: "🔵", color: "text-blue-500" },
-  moved: { icon: "🔵", color: "text-blue-500" },
-  completed: { icon: "✅", color: "text-emerald-500" },
-  assigned: { icon: "👤", color: "text-gray-400" },
-  updated: { icon: "📝", color: "text-yellow-500" },
-  commented: { icon: "💬", color: "text-purple-400" },
-  push: { icon: "📤", color: "text-orange-400" },
-  pr_merged: { icon: "🔀", color: "text-purple-500" },
-  deploy_success: { icon: "🚀", color: "text-green-400" },
-  sync_completed: { icon: "🔄", color: "text-blue-400" },
+type GitCommit = {
+  _id: string;
+  shortHash?: string;
+  message?: string;
+  agentName?: string;
+  filesChanged?: number;
+  additions?: number;
+  deletions?: number;
+  pushedAt?: number;
+  _creationTime?: number;
 };
 
-const eventVerbs: Record<string, string> = {
-  created: "created",
-  status_change: "moved",
-  moved: "moved",
-  completed: "completed",
-  assigned: "assigned",
-  updated: "updated",
-  commented: "commented on",
-  push: "pushed",
-  pr_merged: "merged",
-  deploy_success: "deployed",
-  sync_completed: "synced",
+type FeedItem = {
+  id: string;
+  type: "commit" | "task" | "deploy";
+  icon: string;
+  agent: string;
+  action: string;
+  detail: string;
+  meta?: string;
+  timestamp: number;
+  color: string;
 };
 
-// NOISE PATTERNS - filter these out
+// NOISE FILTERS
 const NOISE_EVENT_TYPES = ["channel_message", "heartbeat", "message", "posted", "dm"];
 const NOISE_PATTERNS = [
   /posted to #/i,
@@ -58,64 +60,110 @@ const NOISE_PATTERNS = [
   /status.?ok/i,
   /standing by/i,
   /session (start|complete)/i,
+  /online/i,
 ];
 
-/**
- * Phase 5: Real-time Activity Feed (Linear-style)
- * Subscribes to Convex activityEvents with real-time updates
- * No polling - Convex pushes updates instantly via WebSocket
- * Filters out noise - only shows IMPACT
- */
+// HIGH IMPACT event types
+const IMPACT_EVENTS = ["completed", "push", "pr_merged", "deploy_success", "created"];
+
 export function ActivityFeed({ limit = 20, className }: ActivityFeedProps) {
-  // Track seen event IDs to detect new arrivals
-  const seenIdsRef = useRef<Set<string>>(new Set());
-  const [newIds, setNewIds] = useState<Set<string>>(new Set());
-  const mountTimeRef = useRef<number>(Date.now());
+  // Fetch activity events
+  const rawEvents = useQuery(api.activityEvents.list, { limit: limit * 2 }) as ActivityEvent[] | undefined;
 
-  // Real-time subscription to activity events - Convex handles WebSocket
-  const rawEvents = useQuery(api.activityEvents.list, { limit: limit * 2 });
+  // Fetch git commits
+  const commits = useQuery(api.gitActivity.getRecent, { limit }) as GitCommit[] | undefined;
 
-  // Filter out noise
-  const events = (rawEvents as ActivityEvent[] | undefined)?.filter((event) => {
-    const eventType = (event.eventType ?? "").toLowerCase();
-    // Skip noise event types
-    if (NOISE_EVENT_TYPES.some(n => eventType.includes(n))) return false;
-    // Skip noise patterns in description (using metadata or eventType as proxy)
-    const desc = eventType + (event.metadata?.toStatus || "");
-    if (NOISE_PATTERNS.some(p => p.test(desc))) return false;
-    return true;
-  }).slice(0, limit);
+  // Merge and filter into unified feed
+  const feed = useMemo(() => {
+    const items: FeedItem[] = [];
 
-  // Detect new events arriving in real-time
-  useEffect(() => {
-    if (!events) return;
+    // Process git commits - HIGH IMPACT
+    if (commits) {
+      for (const commit of commits) {
+        const message = commit.message?.split("\n")[0]?.slice(0, 45) || "";
+        const metaParts: string[] = [];
+        if (commit.filesChanged) metaParts.push(`${commit.filesChanged} files`);
+        if (commit.additions) metaParts.push(`+${commit.additions}`);
+        if (commit.deletions) metaParts.push(`-${commit.deletions}`);
 
-    const currentIds = new Set((events as ActivityEvent[]).map(e => e._id));
-    const freshIds = new Set<string>();
-
-    // Find events that arrived after component mounted
-    (events as ActivityEvent[]).forEach(event => {
-      if (!seenIdsRef.current.has(event._id) && (event.timestamp ?? 0) > mountTimeRef.current - 5000) {
-        freshIds.add(event._id);
+        items.push({
+          id: commit._id,
+          type: "commit",
+          icon: "!",
+          agent: commit.agentName?.toUpperCase() || "?",
+          action: "shipped",
+          detail: message || commit.shortHash || "code",
+          meta: metaParts.length > 0 ? metaParts.join(" ") : undefined,
+          timestamp: commit.pushedAt || commit._creationTime || 0,
+          color: "text-emerald-400",
+        });
       }
-    });
-
-    // Update seen IDs
-    seenIdsRef.current = currentIds;
-
-    // Animate new items
-    if (freshIds.size > 0) {
-      setNewIds(freshIds);
-      // Clear animation after 2 seconds
-      const timer = setTimeout(() => setNewIds(new Set()), 2000);
-      return () => clearTimeout(timer);
     }
-  }, [events]);
 
-  if (!events || events.length === 0) {
+    // Process activity events - filter noise
+    if (rawEvents) {
+      for (const event of rawEvents) {
+        const eventType = (event.eventType ?? "").toLowerCase();
+        const desc = event.description || "";
+
+        // Skip noise
+        if (NOISE_EVENT_TYPES.some(n => eventType.includes(n))) continue;
+        if (NOISE_PATTERNS.some(p => p.test(desc) || p.test(eventType))) continue;
+
+        // Only show high-impact events
+        if (!IMPACT_EVENTS.some(e => eventType.includes(e))) continue;
+
+        let icon = "-";
+        let action = eventType;
+        let color = "text-zinc-400";
+
+        if (eventType.includes("completed")) {
+          icon = "!";
+          action = "completed";
+          color = "text-emerald-400";
+        } else if (eventType.includes("created")) {
+          icon = "+";
+          action = "created";
+          color = "text-blue-400";
+        } else if (eventType.includes("deploy")) {
+          icon = "!";
+          action = "deployed";
+          color = "text-green-400";
+        } else if (eventType.includes("merged")) {
+          icon = "!";
+          action = "merged";
+          color = "text-purple-400";
+        }
+
+        items.push({
+          id: event._id,
+          type: "task",
+          icon,
+          agent: event.agentName?.toUpperCase() || "?",
+          action,
+          detail: event.linearIdentifier || desc.slice(0, 40) || "",
+          timestamp: event.timestamp || 0,
+          color,
+        });
+      }
+    }
+
+    // Sort by timestamp, dedupe
+    items.sort((a, b) => b.timestamp - a.timestamp);
+
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      const key = `${item.agent}-${item.action}-${item.detail.slice(0, 15)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, limit);
+  }, [rawEvents, commits, limit]);
+
+  if (feed.length === 0) {
     return (
       <div className={cn("py-8 text-center text-sm text-zinc-500", className)}>
-        <span className="text-2xl mb-2 block">📡</span>
+        <span className="text-2xl mb-2 block">!</span>
         No recent activity
       </div>
     );
@@ -123,78 +171,48 @@ export function ActivityFeed({ limit = 20, className }: ActivityFeedProps) {
 
   return (
     <div className={cn("flex flex-col", className)}>
-      {(events as ActivityEvent[]).map((event) => {
-        const eventType = event.eventType ?? "updated";
-        const config = eventConfig[eventType] ?? { icon: "•", color: "text-zinc-500" };
-        const verb = eventVerbs[eventType] ?? eventType;
-        const agentName = (event.agentName ?? "unknown").toUpperCase();
-        const ticketId = event.linearIdentifier ?? "";
-        const metadata = event.metadata;
-        const isNew = newIds.has(event._id);
+      {feed.map((item) => (
+        <div
+          key={item.id}
+          className={cn(
+            "flex items-start gap-2 border-b border-zinc-800 px-3 py-2.5 min-h-[44px]",
+            "transition-colors hover:bg-zinc-900",
+            item.type === "commit" && "bg-zinc-900/50"
+          )}
+        >
+          {/* Impact indicator */}
+          <span className={cn("font-bold text-sm w-4 shrink-0", item.color)}>
+            {item.icon}
+          </span>
 
-        // Build action string
-        let actionDetail = "";
-        if (eventType === "status_change" || eventType === "moved") {
-          const toStatus = metadata?.toStatus?.replace("_", " ") ?? "";
-          if (toStatus) actionDetail = ` → ${toStatus}`;
-        } else if (eventType === "assigned") {
-          const assignedTo = metadata?.assignedTo?.toUpperCase() ?? "";
-          if (assignedTo) actionDetail = ` → ${assignedTo}`;
-        }
+          {/* Agent */}
+          <span className="w-12 shrink-0 text-xs font-semibold text-zinc-50 truncate">
+            {item.agent}
+          </span>
 
-        return (
-          <div
-            key={event._id}
-            className={cn(
-              // 44px min touch target for mobile
-              "flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 border-b border-zinc-800 px-3 sm:px-4 py-3 min-h-[44px]",
-              "transition-all duration-300 hover:bg-zinc-900 touch-manipulation",
-              // Real-time highlight for new events
-              isNew && "bg-blue-500/10 animate-pulse ring-1 ring-blue-500/30"
-            )}
-          >
-            {/* Live indicator for new events */}
-            {isNew && (
-              <span className="shrink-0 h-2 w-2 rounded-full bg-blue-500 animate-ping" />
-            )}
+          {/* Action */}
+          <span className={cn("shrink-0 text-xs font-medium", item.color)}>
+            {item.action}
+          </span>
 
-            {/* Icon */}
-            <span className="shrink-0 text-sm sm:text-base">{config.icon}</span>
+          {/* Detail */}
+          <span className="flex-1 text-xs text-zinc-300 truncate">
+            {item.detail}
+          </span>
 
-            {/* Agent name */}
-            <span className="w-10 sm:w-12 shrink-0 truncate text-xs sm:text-sm font-semibold text-zinc-50">
-              {agentName}
+          {/* Meta (files/lines for commits) */}
+          {item.meta && (
+            <span className="shrink-0 text-[10px] font-mono text-zinc-500">
+              {item.meta}
             </span>
+          )}
 
-            {/* Action verb */}
-            <span className={cn("shrink-0 text-xs sm:text-sm", config.color)}>
-              {verb}
-            </span>
-
-            {/* Ticket ID */}
-            {ticketId && (
-              <span className="shrink-0 font-mono text-xs sm:text-sm text-zinc-50">
-                {ticketId}
-              </span>
-            )}
-
-            {/* Action detail (e.g., → In Progress) */}
-            {actionDetail && (
-              <span className="shrink-0 text-xs sm:text-sm text-zinc-500">
-                {actionDetail}
-              </span>
-            )}
-
-            {/* Spacer */}
-            <span className="hidden sm:block flex-1" />
-
-            {/* Timestamp */}
-            <span className="shrink-0 text-[10px] sm:text-xs text-zinc-600 ml-auto sm:ml-0 tabular-nums">
-              {formatDistanceToNow(event.timestamp ?? Date.now(), { addSuffix: false })}
-            </span>
-          </div>
-        );
-      })}
+          {/* Timestamp */}
+          <span className="shrink-0 text-[10px] text-zinc-600 tabular-nums">
+            {formatDistanceToNow(item.timestamp, { addSuffix: false })}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
