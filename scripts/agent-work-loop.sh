@@ -36,9 +36,10 @@ HEARTBEAT_INTERVAL=300  # Seconds between heartbeats (5 min)
 TASK_TIMEOUT=600        # Max seconds to wait for task completion (10 min)
 COMPLETION_CHECK=30     # Seconds between completion checks
 
-# Retry Configuration (AGT-292: Auto-retry failed tasks)
-MAX_TASK_RETRIES=2      # Max retries per dispatch before giving up
-RETRY_BACKOFF=60        # Seconds to wait before retry
+# Retry Configuration (AGT-276: Auto-retry failed tasks)
+MAX_TASK_RETRIES=3      # Max retries per dispatch before giving up
+RETRY_BACKOFF=60        # Seconds to wait before retry (base)
+RETRY_BACKOFF_MULTIPLIER=2  # Exponential backoff multiplier
 
 # ============================================================================
 # SETUP
@@ -240,6 +241,7 @@ wait_for_completion() {
 # ============================================================================
 
 RETRY_FILE="$EVOX_DIR/logs/retry-$AGENT_LOWER.json"
+METRICS_FILE="$EVOX_DIR/logs/metrics-$AGENT_LOWER.json"
 
 # Get retry count for a dispatch
 get_retry_count() {
@@ -269,6 +271,61 @@ clear_retry() {
   local dispatch_id="$1"
   if [ -f "$RETRY_FILE" ]; then
     python3 -c "import json; d=json.load(open('$RETRY_FILE')); d.pop('$dispatch_id', None); json.dump(d, open('$RETRY_FILE','w'))" 2>/dev/null || true
+  fi
+}
+
+# Calculate exponential backoff for retry
+get_backoff_time() {
+  local retry_num="$1"
+  local backoff=$((RETRY_BACKOFF * (RETRY_BACKOFF_MULTIPLIER ** (retry_num - 1))))
+  # Cap at 5 minutes
+  if [ "$backoff" -gt 300 ]; then
+    backoff=300
+  fi
+  echo "$backoff"
+}
+
+# ============================================================================
+# RETRY METRICS TRACKING (AGT-276: Success rate > 80%)
+# ============================================================================
+
+# Record retry attempt
+record_retry_attempt() {
+  local success="$1"  # "success" or "failure"
+  python3 << EOF
+import json
+import os
+metrics_file = "$METRICS_FILE"
+if os.path.exists(metrics_file):
+    with open(metrics_file, 'r') as f:
+        m = json.load(f)
+else:
+    m = {"total_retries": 0, "successful_retries": 0, "failed_retries": 0}
+
+m["total_retries"] = m.get("total_retries", 0) + 1
+if "$success" == "success":
+    m["successful_retries"] = m.get("successful_retries", 0) + 1
+else:
+    m["failed_retries"] = m.get("failed_retries", 0) + 1
+
+# Calculate success rate
+if m["total_retries"] > 0:
+    m["success_rate"] = round(m["successful_retries"] / m["total_retries"] * 100, 1)
+else:
+    m["success_rate"] = 0
+
+with open(metrics_file, 'w') as f:
+    json.dump(m, f)
+print(m["success_rate"])
+EOF
+}
+
+# Get current retry success rate
+get_retry_success_rate() {
+  if [ -f "$METRICS_FILE" ]; then
+    python3 -c "import json; m=json.load(open('$METRICS_FILE')); print(m.get('success_rate', 0))" 2>/dev/null || echo "0"
+  else
+    echo "0"
   fi
 }
 
@@ -484,8 +541,9 @@ GO. Execute this task now."
       if [ "$RETRY_COUNT" -lt "$MAX_TASK_RETRIES" ]; then
         # Increment retry and attempt again
         NEW_RETRY=$(increment_retry "$DISPATCH_ID")
-        log "   🔄 Scheduling retry #$NEW_RETRY in ${RETRY_BACKOFF}s..."
-        post_status "🔄 Retry #$NEW_RETRY for: $COMMAND"
+        BACKOFF_TIME=$(get_backoff_time "$NEW_RETRY")
+        log "   🔄 Scheduling retry #$NEW_RETRY in ${BACKOFF_TIME}s (exponential backoff)..."
+        post_status "🔄 Retry #$NEW_RETRY for: $COMMAND (backoff: ${BACKOFF_TIME}s)"
 
         # If stuck, try to recover Claude first
         if [ "$WAIT_RESULT" -eq 2 ]; then
@@ -496,8 +554,8 @@ GO. Execute this task now."
           sleep 5
         fi
 
-        # Wait before retry
-        sleep "$RETRY_BACKOFF"
+        # Wait with exponential backoff before retry
+        sleep "$BACKOFF_TIME"
 
         # Re-send the task (mark as running again and retry)
         log "   📤 Re-sending task to Claude (retry #$NEW_RETRY)..."
@@ -509,11 +567,14 @@ GO. Execute this task now."
         wait_for_completion "$TASK_TIMEOUT" || RETRY_WAIT_RESULT=$?
 
         if [ "$RETRY_WAIT_RESULT" -eq 0 ]; then
-          log "   ✅ Retry succeeded!"
+          log "   ✅ Retry #$NEW_RETRY succeeded!"
+          SUCCESS_RATE=$(record_retry_attempt "success")
+          log "   📊 Retry success rate: ${SUCCESS_RATE}%"
           clear_retry "$DISPATCH_ID"
           update_agent_status "idle"
         else
           log "   ❌ Retry #$NEW_RETRY failed"
+          record_retry_attempt "failure"
           # Will try again next cycle if under max retries
         fi
       else
