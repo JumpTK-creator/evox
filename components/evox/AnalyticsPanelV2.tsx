@@ -91,12 +91,12 @@ export function AnalyticsPanelV2({ className }: AnalyticsPanelV2Props) {
     });
 
     // Count by status (within time range for done, all for others)
-    const done = tasks.filter((t) => t.status === "done").length;
+    const done = tasks.filter((t) => t.status?.toLowerCase() === "done").length;
     const inProgress = tasks.filter(
-      (t) => t.status === "in_progress" || t.status === "review"
+      (t) => t.status?.toLowerCase() === "in_progress" || t.status?.toLowerCase() === "review"
     ).length;
     const backlog = tasks.filter(
-      (t) => t.status === "backlog" || t.status === "todo"
+      (t) => t.status?.toLowerCase() === "backlog" || t.status?.toLowerCase() === "todo"
     ).length;
     const total = done + inProgress + backlog;
     const completionPercentage = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -109,7 +109,7 @@ export function AnalyticsPanelV2({ className }: AnalyticsPanelV2Props) {
       const dayStart = startOfDay(subDays(new Date(), i)).getTime();
       const dayEnd = endOfDay(subDays(new Date(), i)).getTime();
       const dayTasks = tasks.filter((t) => {
-        const completedAt = t.completedAt ?? (t.status === "done" ? t.updatedAt : 0);
+        const completedAt = t.completedAt ?? (t.status?.toLowerCase() === "done" ? t.updatedAt : 0);
         return completedAt >= dayStart && completedAt <= dayEnd;
       });
 
@@ -137,7 +137,7 @@ export function AnalyticsPanelV2({ className }: AnalyticsPanelV2Props) {
     const agentStats = agents.map((agent) => {
       const agentName = agent.name.toLowerCase();
       const agentTasks = tasks.filter(
-        (t) => t.agentName?.toLowerCase() === agentName && t.status === "done"
+        (t) => t.agentName?.toLowerCase() === agentName && t.status?.toLowerCase() === "done"
       );
       const costEntry = costData?.agents.find(
         (c) => c.agentName.toLowerCase() === agentName
@@ -184,7 +184,7 @@ export function AnalyticsPanelV2({ className }: AnalyticsPanelV2Props) {
       queued: tasks.filter(
         (t) =>
           t.agentName?.toLowerCase() === a.name.toLowerCase() &&
-          (t.status === "todo" || t.status === "backlog")
+          (t.status?.toLowerCase() === "todo" || t.status?.toLowerCase() === "backlog")
       ).length,
     }));
     const bottleneck = tasksPerAgent.find((a) => a.queued >= 5);

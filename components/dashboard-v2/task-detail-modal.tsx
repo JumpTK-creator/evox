@@ -51,7 +51,7 @@ export function TaskDetailModal({ open, task, onClose }: TaskDetailModalProps) {
 
   if (!open || !task) return null;
 
-  const status = task.status ?? "todo";
+  const status = (task.status ?? "todo").toLowerCase();
   const statusStyle = statusColors[status] ?? statusColors.todo;
   const createdAt = fullTask?.createdAt ?? null;
   const updatedAt = task.updatedAt ?? fullTask?.updatedAt ?? null;

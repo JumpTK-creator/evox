@@ -108,7 +108,8 @@ function AgentLiveCard({ agent }: AgentLiveCardProps) {
     offline: "bg-red-500",
   };
 
-  const isActive = agent.status === "online" || agent.status === "busy";
+  const status = agent.status?.toLowerCase() || "offline";
+  const isActive = status === "online" || status === "busy";
 
   return (
     <div
@@ -120,7 +121,7 @@ function AgentLiveCard({ agent }: AgentLiveCardProps) {
         <div className="flex items-center gap-3">
           {/* Status dot */}
           <div
-            className={`h-3 w-3 rounded-full ${statusColors[agent.status] ?? "bg-gray-500"} ${
+            className={`h-3 w-3 rounded-full ${statusColors[status] ?? "bg-gray-500"} ${
               isActive ? "animate-pulse" : ""
             }`}
           />
@@ -137,7 +138,7 @@ function AgentLiveCard({ agent }: AgentLiveCardProps) {
           <div
             className={`text-sm ${isActive ? "text-green-400" : "text-[#666]"}`}
           >
-            {agent.status.toUpperCase()}
+            {status.toUpperCase()}
           </div>
           {agent.statusReason && (
             <div className="text-xs text-[#555]">{agent.statusReason}</div>

@@ -202,8 +202,8 @@ export function ElonDashboard({ className }: ElonDashboardProps) {
     const yesterdayTasks = tasks.filter(t => t.updatedAt >= yesterdayStart && t.updatedAt < yesterdayEnd);
 
     // Completed today vs yesterday
-    const completedToday = todayTasks.filter(t => t.status === "done").length;
-    const completedYesterday = yesterdayTasks.filter(t => t.status === "done").length;
+    const completedToday = todayTasks.filter(t => t.status?.toLowerCase() === "done").length;
+    const completedYesterday = yesterdayTasks.filter(t => t.status?.toLowerCase() === "done").length;
 
     // Calculate velocity (tasks per hour)
     const hoursElapsedToday = (now - startOfDay(new Date()).getTime()) / (60 * 60 * 1000);
@@ -216,7 +216,7 @@ export function ElonDashboard({ className }: ElonDashboardProps) {
       const dayStart = startOfDay(subDays(new Date(), i)).getTime();
       const dayEnd = dayStart + day24h;
       const dayCompleted = tasks.filter(t =>
-        t.status === "done" &&
+        t.status?.toLowerCase() === "done" &&
         t.completedAt &&
         t.completedAt >= dayStart &&
         t.completedAt < dayEnd
@@ -233,12 +233,13 @@ export function ElonDashboard({ className }: ElonDashboardProps) {
     // Agent utilization
     const agentUtilization = agents.map(agent => {
       const agentMetric = allMetrics?.find(m => m.agentName.toLowerCase() === agent.name.toLowerCase());
+      const agentStatus = agent.status?.toLowerCase() || "offline";
       return {
         name: agent.name,
         avatar: agent.avatar,
         status: agent.status,
         utilization: agentMetric?.utilizationPercent ||
-          (agent.status === "busy" ? 80 : agent.status === "online" ? 50 : agent.status === "idle" ? 20 : 0),
+          (agentStatus === "busy" ? 80 : agentStatus === "online" ? 50 : agentStatus === "idle" ? 20 : 0),
         tasksCompleted: agentMetric?.totalTasksCompleted || 0,
         cost: agentMetric?.totalCost || 0,
       };
@@ -249,10 +250,10 @@ export function ElonDashboard({ className }: ElonDashboardProps) {
     const underutilized = sortedByUtil.find(a => a.utilization < 50);
 
     // Bottlenecks
-    const inProgressTasks = tasks.filter(t => t.status === "in_progress");
-    const waitingTasks = tasks.filter(t => t.status === "todo" || t.status === "backlog");
+    const inProgressTasks = tasks.filter(t => t.status?.toLowerCase() === "in_progress");
+    const waitingTasks = tasks.filter(t => t.status?.toLowerCase() === "todo" || t.status?.toLowerCase() === "backlog");
     const blockedTasks = tasks.filter(t =>
-      t.status === "in_progress" &&
+      t.status?.toLowerCase() === "in_progress" &&
       t.updatedAt < now - (30 * 60 * 1000) // Not updated in 30 min
     );
 
