@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // AGT-253: Vision Progress Tracking
 // Track North Star metrics toward organizational goals
@@ -198,7 +199,7 @@ export const initDefaults = mutation({
       },
     ];
 
-    const created = [];
+    const created: Array<{ metric: string; id: Id<"visionProgress"> }> = [];
 
     for (const d of defaults) {
       const existing = await ctx.db

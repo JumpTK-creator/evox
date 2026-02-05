@@ -142,10 +142,13 @@ export default defineSchema({
     attachments: v.optional(v.array(v.id("documents"))),
     // @mentions parsed from content
     mentions: v.optional(v.array(v.id("agents"))),
+    // Reply threading: parentId references another comment
+    parentId: v.optional(v.id("taskComments")),
     createdAt: v.number(),
   })
     .index("by_task", ["taskId", "createdAt"])
-    .index("by_agent", ["fromAgentId", "createdAt"]),
+    .index("by_agent", ["fromAgentId", "createdAt"])
+    .index("by_parent", ["parentId", "createdAt"]),
 
   // AGT-174: Unified Communication System
   // Single table for all agent messaging: comments, DMs, dispatches, system messages
@@ -239,6 +242,9 @@ export default defineSchema({
       fromStatus: v.optional(v.string()),
       toStatus: v.optional(v.string()),
       assignedTo: v.optional(v.string()), // AGT-182: Track who was assigned
+      // Task splitting events
+      subtaskCount: v.optional(v.number()),
+      subtasks: v.optional(v.array(v.string())),
       // Git events
       commitHash: v.optional(v.string()),
       branch: v.optional(v.string()),

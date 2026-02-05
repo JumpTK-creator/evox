@@ -1,6 +1,11 @@
 import { mutation, action, query, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { internal, api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
+
+type DispatchResult =
+  | { agent: string; success: false; reason: string }
+  | { agent: string; success: true; taskId: Id<"tasks">; linearIdentifier: string | undefined };
 
 // AGT-208: Auto-Dispatch from Backlog
 // Automatically assign highest priority unassigned tasks to idle agents
@@ -240,7 +245,7 @@ export const autoDispatchForAgent = mutation({
 export const runAutoDispatchCycle = mutation({
   handler: async (ctx) => {
     const agents = await ctx.db.query("agents").collect();
-    const results = [];
+    const results: DispatchResult[] = [];
 
     for (const agent of agents) {
       // Skip offline agents

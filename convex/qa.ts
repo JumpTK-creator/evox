@@ -1,6 +1,6 @@
 import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 // AGT-225: QA Agent Integration — Automated Test Gate
 // Integrates Quinn (QA agent) into CI/CD for automated quality gates

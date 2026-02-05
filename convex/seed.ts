@@ -159,7 +159,7 @@ export const seedSkills = mutation({
     const sam = agents.find((a) => a.name === "SAM" || a.role === "backend");
     const leo = agents.find((a) => a.name === "LEO" || a.role === "frontend");
 
-    const results = [];
+    const results: Array<{ agent: string; level: number }> = [];
 
     // MAX (PM) - Level 3 Lead
     if (max) {

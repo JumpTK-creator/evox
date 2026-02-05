@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // AGT-197: Execution Visibility Backend
 // Provides file activity tracking and execution logging for agent transparency
@@ -104,7 +105,7 @@ export const logExecutionBatch = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const insertedIds = [];
+    const insertedIds: Id<"executionLogs">[] = [];
 
     for (const log of args.logs) {
       const id = await ctx.db.insert("executionLogs", {

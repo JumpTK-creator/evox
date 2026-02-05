@@ -32,6 +32,7 @@ export const postComment = mutation({
     agentName: v.string(),
     content: v.string(),
     attachments: v.optional(v.array(v.id("documents"))),
+    parentId: v.optional(v.id("taskComments")),
   },
   handler: async (ctx, args) => {
     // Get agent by name
@@ -77,6 +78,7 @@ export const postComment = mutation({
       content: args.content,
       attachments: args.attachments,
       mentions: mentionedAgents.length > 0 ? mentionedAgents : undefined,
+      parentId: args.parentId,
       createdAt: Date.now(),
     });
 
@@ -135,6 +137,33 @@ export const listByTask = query({
     // Enrich with agent info
     const enriched = await Promise.all(
       comments.map(async (comment) => {
+        const agent = await ctx.db.get(comment.fromAgentId);
+        return {
+          ...comment,
+          agentName: agent?.name || "Unknown",
+          agentAvatar: agent?.avatar || "🤖",
+        };
+      })
+    );
+
+    return enriched;
+  },
+});
+
+/**
+ * Get replies to a specific comment
+ */
+export const getReplies = query({
+  args: { parentId: v.id("taskComments") },
+  handler: async (ctx, args) => {
+    const replies = await ctx.db
+      .query("taskComments")
+      .withIndex("by_parent", (q) => q.eq("parentId", args.parentId))
+      .collect();
+
+    // Enrich with agent info
+    const enriched = await Promise.all(
+      replies.map(async (comment) => {
         const agent = await ctx.db.get(comment.fromAgentId);
         return {
           ...comment,

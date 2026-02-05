@@ -276,7 +276,7 @@ export const getAnalytics = query({
       let fromName = agentCache.get(msg.from);
       if (!fromName) {
         const agent = await ctx.db.get(msg.from);
-        if (agent) {
+        if (agent && agent.name && agent.avatar) {
           fromName = { name: agent.name, avatar: agent.avatar };
           agentCache.set(msg.from, fromName);
         }
@@ -285,7 +285,7 @@ export const getAnalytics = query({
       let toName = agentCache.get(msg.to);
       if (!toName) {
         const agent = await ctx.db.get(msg.to);
-        if (agent) {
+        if (agent && agent.name && agent.avatar) {
           toName = { name: agent.name, avatar: agent.avatar };
           agentCache.set(msg.to, toName);
         }

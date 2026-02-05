@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 
 // AGT-193: Cost Tracking Backend
 // Track API token usage and cost per agent per task
@@ -55,7 +56,7 @@ export const logCostBatch = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const ids = [];
+    const ids: Id<"costLogs">[] = [];
     for (const entry of args.entries) {
       const id = await ctx.db.insert("costLogs", {
         ...entry,
