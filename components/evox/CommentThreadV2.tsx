@@ -18,6 +18,7 @@ type TaskComment = {
   agentAvatar?: string;
   content: string;
   createdAt?: number;
+  parentId?: string;
 };
 
 /** Inline text: highlight @mentions in blue */
@@ -83,13 +84,17 @@ function MentionAutocomplete({ query, onSelect, position }: MentionAutocompleteP
 
 interface CommentItemProps {
   comment: TaskComment;
-  onReply: () => void;
+  onReply: (commentId: string, agentName: string) => void;
+  isReply?: boolean;
 }
 
 /** Individual comment card */
-function CommentItem({ comment, onReply }: CommentItemProps) {
+function CommentItem({ comment, onReply, isReply }: CommentItemProps) {
   return (
-    <div className="flex gap-3 rounded-lg border border-[#222] bg-[#0f0f0f] p-4 hover:border-[#333] transition-colors">
+    <div className={cn(
+      "flex gap-3 rounded-lg border border-[#222] bg-[#0f0f0f] p-4 hover:border-[#333] transition-colors",
+      isReply && "ml-8 border-l-2 border-l-blue-500/30"
+    )}>
       {/* Avatar */}
       <div className="shrink-0">
         <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#333] bg-[#1a1a1a] text-lg">
@@ -111,7 +116,7 @@ function CommentItem({ comment, onReply }: CommentItemProps) {
           </div>
           <button
             type="button"
-            onClick={onReply}
+            onClick={() => onReply(comment._id, comment.agentName || "Unknown")}
             className="text-xs text-zinc-500 hover:text-blue-400 transition-colors"
           >
             Reply
@@ -152,9 +157,30 @@ export function CommentThreadV2({ taskId }: CommentThreadV2Props) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [replyingTo, setReplyingTo] = useState<{ id: string; agentName: string } | null>(null);
 
   const comments = useQuery(api.taskComments.listByTask, { taskId });
   const postComment = useMutation(api.taskComments.postComment);
+
+  // Organize comments into threads (top-level and replies)
+  const { topLevel, replies } = useMemo(() => {
+    if (!comments) return { topLevel: [], replies: new Map<string, TaskComment[]>() };
+
+    const topLevel: TaskComment[] = [];
+    const replies = new Map<string, TaskComment[]>();
+
+    for (const comment of comments as TaskComment[]) {
+      if (comment.parentId) {
+        const existing = replies.get(comment.parentId) || [];
+        existing.push(comment);
+        replies.set(comment.parentId, existing);
+      } else {
+        topLevel.push(comment);
+      }
+    }
+
+    return { topLevel, replies };
+  }, [comments]);
 
   // Auto-scroll to bottom when new comments arrive
   useEffect(() => {
@@ -202,9 +228,13 @@ export function CommentThreadV2({ taskId }: CommentThreadV2Props) {
     textareaRef.current?.focus();
   };
 
-  const handleReply = () => {
-    // TODO: Implement reply threading when backend supports parentId
+  const handleReply = (commentId: string, agentName: string) => {
+    setReplyingTo({ id: commentId, agentName });
     textareaRef.current?.focus();
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,8 +243,14 @@ export function CommentThreadV2({ taskId }: CommentThreadV2Props) {
     if (!content) return;
 
     try {
-      await postComment({ taskId, agentName: "Son", content });
+      await postComment({
+        taskId,
+        agentName: "Son",
+        content,
+        parentId: replyingTo?.id as Id<"taskComments"> | undefined,
+      });
       setDraft("");
+      setReplyingTo(null);
     } catch (err) {
       console.error("Failed to post comment:", err);
     }
@@ -236,12 +272,22 @@ export function CommentThreadV2({ taskId }: CommentThreadV2Props) {
             <p className="text-sm text-zinc-600">No comments yet. Start the conversation!</p>
           </div>
         ) : (
-          (comments as TaskComment[]).map((comment) => (
-            <CommentItem
-              key={comment._id}
-              comment={comment}
-              onReply={handleReply}
-            />
+          topLevel.map((comment) => (
+            <div key={comment._id} className="space-y-2">
+              <CommentItem
+                comment={comment}
+                onReply={handleReply}
+              />
+              {/* Nested replies */}
+              {replies.get(comment._id)?.map((reply) => (
+                <CommentItem
+                  key={reply._id}
+                  comment={reply}
+                  onReply={handleReply}
+                  isReply
+                />
+              ))}
+            </div>
           ))
         )}
         <div ref={bottomRef} />
@@ -250,12 +296,27 @@ export function CommentThreadV2({ taskId }: CommentThreadV2Props) {
       {/* Input form */}
       {!isViewerMode && (
         <form onSubmit={handleSubmit} className="relative">
+          {/* Reply indicator */}
+          {replyingTo && (
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2">
+              <span className="text-xs text-blue-400">
+                Replying to <span className="font-semibold uppercase">{replyingTo.agentName}</span>
+              </span>
+              <button
+                type="button"
+                onClick={cancelReply}
+                className="text-xs text-zinc-500 hover:text-zinc-300"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
           <div className="relative">
             <textarea
               ref={textareaRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Write a comment... (@mention to notify)"
+              placeholder={replyingTo ? `Reply to ${replyingTo.agentName}...` : "Write a comment... (@mention to notify)"}
               className="w-full min-h-[100px] rounded-lg border border-[#222] bg-[#111] px-3 py-2 pr-20 text-sm text-zinc-50 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 resize-none"
               rows={3}
               onKeyDown={(e) => {
