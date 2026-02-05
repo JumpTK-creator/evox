@@ -198,7 +198,7 @@ export function TaskBoard({ tasks, agents }: TaskBoardProps) {
                 columnTasks.map((task) => <TaskCard key={task.id} task={task} agents={agentsList} />)
               ) : (
                 <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/20 p-8 text-center">
-                  <p className="text-xs text-zinc-600">No tasks</p>
+                  <p className="text-xs text-zinc-600">No tasks in this column</p>
                 </div>
               )}
             </div>

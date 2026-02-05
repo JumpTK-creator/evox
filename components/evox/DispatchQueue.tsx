@@ -145,7 +145,7 @@ export function DispatchQueue({ className, collapsed = false, onToggle }: Dispat
             onClick={() => setShowAddForm(!showAddForm)}
             className="rounded px-2 py-0.5 text-[10px] text-[#555555] transition-colors hover:bg-white/5 hover:text-[#888888]"
           >
-            + Add
+            + Add Dispatch
           </button>
         )}
       </div>
