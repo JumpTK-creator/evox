@@ -1,16 +1,10 @@
-"use client";
-
 /**
- * EVOX Dashboard v0.2 - Lean & Mobile-first
- * Includes AgentCommsWidget for agent-to-agent communication
+ * EVOX Dashboard v0.2 - Server-side rendered
+ * With AgentCommsWidget showing keywords
  */
-
-import { useEffect, useState } from "react";
-import { AgentCommsWidget } from "@/components/dashboard-v2";
 
 interface Agent {
   name: string;
-  computedStatus?: string;
   status?: string;
 }
 
@@ -23,156 +17,179 @@ interface Activity {
   timestamp: number;
 }
 
-interface StatusData {
-  agents: Agent[];
-  recentActivity: Activity[];
-}
+// Keywords extraction
+const PRIORITY_KEYWORDS = [
+  "shipped", "completed", "done", "fixed", "merged", "deployed", "created",
+  "blocked", "waiting", "testing", "working",
+];
 
-export default function V2Dashboard() {
-  const [data, setData] = useState<StatusData | null>(null);
-  const [loading, setLoading] = useState(true);
+const NOISE_WORDS = new Set([
+  "the", "a", "an", "is", "are", "was", "were", "be", "been", "have", "has",
+  "do", "does", "did", "will", "would", "could", "should", "to", "of", "in",
+  "for", "on", "with", "at", "by", "from", "and", "or", "but", "this", "that",
+]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("https://gregarious-elk-556.convex.site/status");
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error("Failed to fetch status:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+function extractKeywords(text: string): string[] {
+  if (!text) return [];
+  const keywords: string[] = [];
+  const textLower = text.toLowerCase();
 
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // Extract AGT-XXX tickets
+  const tickets = text.match(/AGT-\d+/gi) || [];
+  keywords.push(...tickets.slice(0, 2));
 
-  if (loading || !data) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-pulse text-zinc-500">Loading EVOX...</div>
-      </div>
-    );
+  // Extract priority keywords
+  for (const kw of PRIORITY_KEYWORDS) {
+    if (keywords.length >= 5) break;
+    if (textLower.includes(kw) && !keywords.includes(kw)) {
+      keywords.push(kw);
+    }
   }
 
-  const agents = data.agents || [];
-  const activities = data.recentActivity || [];
-  const onlineCount = agents.filter(
-    (a) => a.computedStatus === "online" || a.computedStatus === "busy" || a.status === "busy"
-  ).length;
+  // Add significant words
+  if (keywords.length < 5) {
+    const words = text.split(/\s+/).filter(w => 
+      w.length > 4 && !NOISE_WORDS.has(w.toLowerCase()) && !w.match(/^[^\w]/)
+    );
+    for (const w of words.slice(0, 3)) {
+      if (keywords.length >= 5) break;
+      if (!keywords.some(k => k.toLowerCase() === w.toLowerCase())) {
+        keywords.push(w.replace(/[^\w-]/g, ''));
+      }
+    }
+  }
 
-  // Filter channel messages for AgentCommsWidget
-  const channelMessages = activities.filter((a) => a.eventType === "channel_message");
+  return keywords.slice(0, 5);
+}
+
+function formatTime(ts: number): string {
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h`;
+}
+
+async function getData() {
+  const res = await fetch("https://gregarious-elk-556.convex.site/status", {
+    cache: 'no-store'
+  });
+  return res.json();
+}
+
+export default async function V2Dashboard() {
+  const data = await getData();
+  
+  const agents: Agent[] = data.agents || [];
+  const activities: Activity[] = data.recentActivity || [];
+  const online = agents.filter((a) => a.status === 'busy').length;
+  const channelMsgs = activities.filter((a) => a.eventType === 'channel_message');
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 max-w-lg mx-auto">
+    <div style={{background: '#000', color: '#fff', minHeight: '100vh', padding: 16, fontFamily: 'system-ui', maxWidth: 480, margin: '0 auto'}}>
       {/* Header */}
-      <header className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800">
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid #222'}}>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">EVOX</h1>
-          <span className="text-zinc-600 text-xs">v0.2</span>
+          <h1 style={{fontSize: 24, fontWeight: 'bold', margin: 0}}>EVOX</h1>
+          <span style={{fontSize: 10, color: '#666'}}>v0.2</span>
         </div>
-        <div className="flex items-center gap-2 bg-zinc-900 px-3 py-1.5 rounded-full">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-zinc-400 text-xs">Live</span>
+        <div style={{display: 'flex', alignItems: 'center', gap: 6, background: '#111', padding: '6px 12px', borderRadius: 20}}>
+          <div style={{width: 8, height: 8, borderRadius: '50%', background: '#22c55e'}} />
+          <span style={{fontSize: 11, color: '#888'}}>Live</span>
         </div>
-      </header>
+      </div>
 
-      {/* Agent Status Grid */}
-      <section className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-zinc-400">Team Status</h2>
-          <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded">
-            {onlineCount}/{agents.length} online
-          </span>
+      {/* Agent Status */}
+      <div style={{marginBottom: 20}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 10}}>
+          <span style={{fontSize: 13, color: '#888'}}>Team Status</span>
+          <span style={{fontSize: 11, color: '#666', background: '#111', padding: '2px 8px', borderRadius: 4}}>{online}/{agents.length}</span>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          {agents.slice(0, 6).map((agent, i) => {
-            const isOnline = agent.computedStatus === "online" || agent.computedStatus === "busy" || agent.status === "busy";
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8}}>
+          {agents.slice(0, 6).map((a, i) => (
+            <div key={i} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: 10, background: '#111', borderRadius: 8}}>
+              <div style={{width: 14, height: 14, borderRadius: '50%', background: a.status === 'busy' ? '#22c55e' : '#ef4444'}} />
+              <span style={{fontSize: 10, color: '#ccc'}}>{a.name?.slice(0, 4)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Metrics */}
+      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20}}>
+        <div style={{background: '#111', padding: 16, borderRadius: 12, textAlign: 'center'}}>
+          <div style={{fontSize: 28, fontWeight: 'bold', color: '#22c55e'}}>{online}</div>
+          <div style={{fontSize: 11, color: '#666', textTransform: 'uppercase'}}>Online</div>
+        </div>
+        <div style={{background: '#111', padding: 16, borderRadius: 12, textAlign: 'center'}}>
+          <div style={{fontSize: 28, fontWeight: 'bold', color: '#3b82f6'}}>{channelMsgs.length}</div>
+          <div style={{fontSize: 11, color: '#666', textTransform: 'uppercase'}}>Messages</div>
+        </div>
+      </div>
+
+      {/* Agent Comms Widget - 3-5 Keywords */}
+      <div style={{background: '#111', borderRadius: 12, padding: 16, marginBottom: 20}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 12}}>
+          <span style={{fontSize: 13, color: '#888'}}>🗣️ Agent Comms</span>
+          <span style={{fontSize: 10, color: '#555'}}>{channelMsgs.length} msgs</span>
+        </div>
+        <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+          {channelMsgs.slice(0, 6).map((msg, i) => {
+            const keywords = extractKeywords(msg.description || '');
+            const channel = msg.title?.match(/#(\w+)/)?.[1] || 'dev';
             return (
-              <div
-                key={i}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-zinc-900/50 active:bg-zinc-800 min-h-[52px]"
-              >
-                <div
-                  className={`w-4 h-4 rounded-full ${
-                    isOnline
-                      ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"
-                      : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
-                  }`}
-                />
-                <span className="text-[11px] font-medium text-zinc-300 truncate w-full text-center">
-                  {agent.name || "?"}
-                </span>
+              <div key={i} style={{paddingBottom: 8, borderBottom: i < 5 ? '1px solid #222' : 'none'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4, fontSize: 11}}>
+                  <span style={{color: '#3b82f6', fontWeight: 600}}>{(msg.agentName || '?').toUpperCase()}</span>
+                  <span style={{color: '#444'}}>→</span>
+                  <span style={{color: '#888'}}>#{channel}</span>
+                  <span style={{color: '#333', marginLeft: 'auto'}}>{formatTime(msg.timestamp)}</span>
+                </div>
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: 4}}>
+                  {keywords.map((kw, j) => (
+                    <span key={j} style={{
+                      fontSize: 10,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      background: kw.match(/AGT-\d+/i) ? '#581c87' : 
+                                  kw.match(/shipped|done|completed|merged/i) ? '#14532d' :
+                                  kw.match(/blocked|waiting/i) ? '#7f1d1d' : '#222',
+                      color: kw.match(/AGT-\d+/i) ? '#c084fc' :
+                             kw.match(/shipped|done|completed|merged/i) ? '#4ade80' :
+                             kw.match(/blocked|waiting/i) ? '#f87171' : '#888'
+                    }}>{kw}</span>
+                  ))}
+                </div>
               </div>
             );
           })}
         </div>
-      </section>
+      </div>
 
-      {/* Metrics */}
-      <section className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
-          <div className="text-3xl font-bold text-green-400">{onlineCount}</div>
-          <div className="text-zinc-500 text-xs uppercase tracking-wide mt-1">Online</div>
+      {/* Activity Feed */}
+      <div>
+        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 10}}>
+          <span style={{fontSize: 13, color: '#888'}}>Live Activity</span>
+          <span style={{fontSize: 10, color: '#555'}}>{activities.length} events</span>
         </div>
-        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
-          <div className="text-3xl font-bold text-blue-400">{activities.length}</div>
-          <div className="text-zinc-500 text-xs uppercase tracking-wide mt-1">Activities</div>
-        </div>
-      </section>
-
-      {/* Agent Communications Widget */}
-      <section className="mb-6">
-        <AgentCommsWidget messages={channelMessages} limit={6} />
-      </section>
-
-      {/* Live Activity Feed */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-zinc-400">Live Activity</h2>
-          <span className="text-[10px] text-zinc-600">{activities.length} events</span>
-        </div>
-        <div className="space-y-2">
-          {activities.slice(0, 6).map((activity, i) => (
-            <div
-              key={activity._id || i}
-              className="bg-zinc-900/50 active:bg-zinc-800 rounded-lg p-4 min-h-[56px]"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-sm text-blue-400">
-                  {activity.agentName || "System"}
-                </span>
-                <span className="text-zinc-600 text-xs">
-                  {formatTime(activity.timestamp)}
-                </span>
+        <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
+          {activities.slice(0, 5).map((a, i) => (
+            <div key={i} style={{background: '#111', padding: 12, borderRadius: 8}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 4}}>
+                <span style={{color: '#3b82f6', fontWeight: 500, fontSize: 13}}>{a.agentName || 'System'}</span>
+                <span style={{color: '#555', fontSize: 11}}>{formatTime(a.timestamp)}</span>
               </div>
-              <div className="text-zinc-400 text-sm line-clamp-2">
-                {activity.description || activity.title || "Activity"}
+              <div style={{color: '#999', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                {(a.description || a.title || 'Activity').slice(0, 70)}
               </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
       {/* Footer */}
-      <footer className="mt-8 pt-4 pb-6 border-t border-zinc-800/50 text-center">
-        <span className="text-zinc-700 text-xs tracking-wider uppercase">
-          EVOX v0.2 • Auto-refresh 5s
-        </span>
-      </footer>
+      <div style={{marginTop: 20, paddingTop: 12, borderTop: '1px solid #222', textAlign: 'center'}}>
+        <span style={{fontSize: 10, color: '#333'}}>↻ Pull to refresh</span>
+      </div>
     </div>
   );
-}
-
-function formatTime(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "now";
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  return `${hours}h`;
 }
