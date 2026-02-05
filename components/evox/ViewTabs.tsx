@@ -46,17 +46,19 @@ export function ViewTabs({ activeTab, onTabChange, className }: ViewTabsProps) {
           aria-selected={activeTab === tab.id}
           onClick={() => onTabChange(tab.id)}
           className={cn(
-            "flex items-center gap-1 sm:gap-2 rounded-md px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium transition-colors whitespace-nowrap shrink-0",
+            // Mobile-first: 44px min touch target (py-3 = 12px * 2 + text ~= 44px)
+            "flex items-center justify-center gap-1 sm:gap-2 rounded-md px-3 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0",
+            "active:scale-95 touch-manipulation",
             activeTab === tab.id
-              ? "bg-white/10 text-white"
-              : "text-[#666666] hover:bg-white/5 hover:text-[#999999]"
+              ? "bg-white/10 text-white shadow-sm"
+              : "text-zinc-500 hover:bg-white/5 hover:text-zinc-300"
           )}
         >
           <span>{tab.label}</span>
           <span
             className={cn(
               "hidden text-[10px] lg:inline",
-              activeTab === tab.id ? "text-white/50" : "text-[#444444]"
+              activeTab === tab.id ? "text-white/50" : "text-zinc-700"
             )}
           >
             {tab.shortcut}

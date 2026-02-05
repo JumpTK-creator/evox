@@ -137,7 +137,7 @@ export default function Home() {
     (taskCounts.backlog ?? 0) + (taskCounts.todo ?? 0) + (taskCounts.inProgress ?? 0) + (taskCounts.review ?? 0) + doneCount;
 
   return (
-    <div className="flex h-screen flex-col bg-[#0a0a0a]">
+    <div className="flex h-screen flex-col bg-zinc-950">
       <SystemPausedBanner />
       <NotificationTopBarWrapper
         agentsActive={activeCount}
@@ -153,7 +153,8 @@ export default function Home() {
       <TaskDetailModal open={selectedTask !== null} task={selectedTask} onClose={() => setSelectedTask(null)} />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <div className="flex flex-col w-[220px]">
+        {/* Sidebar - hidden on mobile, visible on md+ */}
+        <div className="hidden md:flex flex-col w-[220px] shrink-0">
           <AgentSidebar
             selectedAgentId={selectedAgentId}
             onAgentClick={handleAgentClick}
