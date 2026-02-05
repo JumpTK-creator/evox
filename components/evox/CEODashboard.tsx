@@ -131,18 +131,18 @@ function ActivityItem({ event }: { event: ActivityEvent }) {
   );
 }
 
-/** Git Commit Item */
+/** Git Commit Item — mobile-optimized */
 function GitCommitItem({ commit }: { commit: GitCommit }) {
   const msg = commit.message.split('\n')[0].slice(0, 50);
   const hasMore = commit.message.length > 50 || commit.message.includes('\n');
   return (
     <a href={commit.url || "#"} target="_blank" rel="noopener noreferrer"
-      className="flex items-start gap-2 text-[11px] hover:bg-white/5 rounded px-1 py-0.5 -mx-1 transition-colors">
-      <span className="text-white/30 shrink-0 w-10">{formatDistanceToNow(commit.pushedAt, { addSuffix: false })}</span>
+      className="flex items-start gap-1.5 sm:gap-2 text-[11px] hover:bg-white/5 rounded px-1 py-0.5 -mx-1 transition-colors">
+      <span className="text-white/30 shrink-0 w-10 hidden sm:inline">{formatDistanceToNow(commit.pushedAt, { addSuffix: false })}</span>
       <code className="text-emerald-400 font-mono shrink-0">{commit.shortHash}</code>
       <span className="font-medium text-purple-400 uppercase shrink-0 text-[10px]">{commit.agentName || "—"}</span>
       <span className="text-white/60 truncate flex-1">{msg}{hasMore ? "…" : ""}</span>
-      {commit.linkedTicketId && <span className="text-blue-400 shrink-0">{commit.linkedTicketId}</span>}
+      {commit.linkedTicketId && <span className="text-blue-400 shrink-0 hidden sm:inline">{commit.linkedTicketId}</span>}
     </a>
   );
 }
@@ -356,29 +356,29 @@ export function CEODashboard({ className }: CEODashboardProps) {
         </div>
       </div>
 
-      {/* Row 3: Team Strip — single line */}
-      <div className="rounded-lg border border-white/10 bg-zinc-900/50 px-3 py-2.5 flex items-center gap-4 flex-wrap">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 shrink-0">Team</span>
-        <div className="flex items-center gap-3">
+      {/* Row 2: Team Strip */}
+      <div className="rounded-lg border border-white/10 bg-zinc-900/50 px-3 py-2.5">
+        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 shrink-0">Team</span>
           {agentStrip.map(a => (
-            <div key={a.name} className="flex items-center gap-1.5" title={`${a.name} — ${a.status}`}>
+            <div key={a.name} className="flex items-center gap-1 sm:gap-1.5 shrink-0" title={`${a.name} — ${a.status}`}>
               <span className={cn("h-2 w-2 rounded-full shrink-0", dotColors[a.status] || dotColors.offline)} />
-              <span className={cn("text-[11px] font-medium uppercase", a.status !== "offline" ? "text-white/70" : "text-white/30")}>
+              <span className={cn("text-[10px] sm:text-[11px] font-medium uppercase", a.status !== "offline" ? "text-white/70" : "text-white/30")}>
                 {a.name}
               </span>
             </div>
           ))}
+          {topPerformer && (
+            <>
+              <span className="text-white/10 shrink-0 hidden sm:inline">|</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-xs">{topPerformer.avatar || "⭐"}</span>
+                <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-400 uppercase">{topPerformer.name}</span>
+                <span className="text-[10px] text-white/40">{topPerformer.tasks} tasks</span>
+              </div>
+            </>
+          )}
         </div>
-        {topPerformer && (
-          <>
-            <span className="text-white/10">|</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs">{topPerformer.avatar || "⭐"}</span>
-              <span className="text-[11px] font-semibold text-emerald-400 uppercase">{topPerformer.name}</span>
-              <span className="text-[10px] text-white/40">{topPerformer.tasks} tasks</span>
-            </div>
-          </>
-        )}
       </div>
 
       {/* Row 4: Active Work — what agents are doing right now */}
@@ -395,14 +395,14 @@ export function CEODashboard({ className }: CEODashboardProps) {
         </div>
       )}
 
-      {/* Row 5: Activity + Commits | Comms — 2 column */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {/* Row 4: Activity + Commits | Comms — 2 column on desktop, stacked on mobile */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3" style={{ minHeight: 200 }}>
         {/* Left: Activity + Commits */}
-        <div className="flex flex-col gap-3 min-h-0">
+        <div className="flex flex-col gap-3">
           {/* Live Activity */}
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-[120px]">
             <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">Live Activity</div>
-            <div className="flex-1 min-h-0 overflow-y-auto rounded border border-white/5 bg-zinc-900/30 p-2 space-y-0.5">
+            <div className="flex-1 overflow-y-auto rounded border border-white/5 bg-zinc-900/30 p-2 space-y-0.5">
               {recentActivity && recentActivity.length > 0 ? (
                 recentActivity.map(event => <ActivityItem key={event._id} event={event} />)
               ) : (
@@ -425,9 +425,9 @@ export function CEODashboard({ className }: CEODashboardProps) {
         </div>
 
         {/* Right: Agent Comms */}
-        <div className="flex flex-col min-h-0">
+        <div className="flex flex-col min-h-[120px]">
           <div className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">Agent Comms</div>
-          <div className="flex-1 min-h-0 overflow-y-auto rounded border border-white/5 bg-zinc-900/30 p-2">
+          <div className="flex-1 overflow-y-auto rounded border border-white/5 bg-zinc-900/30 p-2">
             <AgentCommunicationFeed limit={8} compact />
           </div>
         </div>
