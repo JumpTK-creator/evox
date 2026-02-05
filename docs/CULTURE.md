@@ -117,6 +117,25 @@ Before any task, ask:
 3. Post summary to channel
 4. Handoff if needed
 
+### After EVERY Task Completion (P0 RULE)
+> **Không chỉ report trong terminal — phải thực sự giao tiếp với team!**
+
+1. **Report to related agent** — Xong task → DM agent liên quan (không chỉ log terminal)
+2. **Include next step suggestion** — Đề xuất việc cần làm tiếp theo
+3. **Reference North Star** — Soi chiếu vào vision, tự quyết định hành động tiếp
+4. **Use Convex messaging** — `curl $EVOX/v2/sendMessage` để team thấy
+
+**Example flow:**
+```
+LEO xong dashboard → DM MAX: "Dashboard done. Suggest: deploy to UAT, then notify CEO for review."
+MAX nhận → Approve hoặc adjust → Assign next task
+```
+
+**Terminal output ≠ Team communication!**
+- Terminal: chỉ bạn thấy
+- Convex DM: team thấy
+- Convex channel: everyone thấy
+
 ---
 
 ## 🚫 Anti-Patterns (Đừng làm)
