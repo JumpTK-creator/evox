@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { AGENT_ORDER } from "@/lib/constants";
 
 interface ExecutionTerminalProps {
   className?: string;
@@ -69,7 +70,7 @@ const statusConfig: Record<ExecutionStatus, { label: string; color: string; puls
   error: { label: "Error", color: "bg-red-500", pulse: false },
 };
 
-const AGENTS = ["max", "sam", "leo", "quinn"] as const;
+const AGENTS = AGENT_ORDER;
 
 /**
  * AGT-196: Execution Terminal

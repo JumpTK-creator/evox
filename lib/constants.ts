@@ -5,8 +5,8 @@
  * Import from here instead.
  */
 
-/** Agent display order: MAX → SAM → LEO → QUINN */
-export const AGENT_ORDER = ["max", "sam", "leo", "quinn"] as const;
+/** Agent display order: MAX → SAM → LEO → QUINN → EVOX */
+export const AGENT_ORDER = ["max", "sam", "leo", "quinn", "evox"] as const;
 
 /** Sort a list of objects with a `name` field by AGENT_ORDER */
 export function sortAgents<T extends { name: string }>(list: T[]): T[] {

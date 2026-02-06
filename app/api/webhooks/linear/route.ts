@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import crypto from "crypto";
+import { AGENT_ORDER } from "@/lib/constants";
 
 // Lazily initialize Convex client
 function getConvexClient() {
@@ -228,7 +229,7 @@ export async function POST(request: NextRequest) {
     // AGT-255: If this is an assignment change, fire agentEvent to wake agent
     if (isAssignmentChange && data.assignee) {
       const assigneeName = data.assignee.name?.toLowerCase();
-      const validAgents = ["sam", "leo", "max", "quinn", "ella"];
+      const validAgents = AGENT_ORDER;
 
       if (validAgents.includes(assigneeName)) {
         // Fire task_assigned event via Convex

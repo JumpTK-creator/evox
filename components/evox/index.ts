@@ -21,7 +21,6 @@ export { AgentCard, extractKeywords, generateSummary } from "./AgentCard";
 export { MetricCard, MetricInline } from "./MetricCard";
 export { Panel, PanelSection } from "./Panel";
 export { DailyNoteCard } from "./DailyNoteCard";
-export { PredictionCard } from "./PredictionCard";
 
 // ============================================
 // CONTENT & DISPLAY
@@ -54,18 +53,10 @@ export { WorkingMemoryPanel } from "./WorkingMemoryPanel";
 export { SoulPreview } from "./SoulPreview";
 export { MemoryTab } from "./MemoryTab";
 export { DMPanel } from "./DMPanel";
-export { ExecutionPanel } from "./ExecutionPanel";
-export { AnalyticsPanelV2 } from "./AnalyticsPanelV2";
-export { SystemHealthWidget } from "./SystemHealthWidget";
-export { AgentMetricsWidget } from "./AgentMetricsWidget";
-export { CostWidget } from "./CostWidget";
-export { AgentBreakdown } from "./AgentBreakdown";
 
 // ============================================
 // CHARTS & VISUALIZATIONS
 // ============================================
-export { VelocityChart } from "./VelocityChart";
-export { CostBarChart } from "./CostBarChart";
 export { FileActivityMatrix } from "./FileActivityMatrix";
 
 // ============================================
@@ -82,20 +73,6 @@ export { CommentThreadV2 } from "./CommentThreadV2";
 // ALERTS & NOTIFICATIONS
 // ============================================
 export { Toast, type ToastProps, type ToastSeverity } from "./Toast";
-export {
-  AlertBanner,
-  AgentOfflineAlert,
-  TaskBlockedAlert,
-  type AlertBannerProps,
-  type AlertBannerAction,
-} from "./AlertBanner";
-export {
-  InlineAlert,
-  ValidationAlert,
-  SuccessMessage,
-  ErrorMessage,
-  type InlineAlertProps,
-} from "./InlineAlert";
 
 // ============================================
 // MODALS & OVERLAYS
@@ -107,7 +84,6 @@ export { ShortcutsHelpModal } from "./ShortcutsHelpModal";
 // LAYOUT & NAVIGATION
 // ============================================
 export { AgentSidebar } from "./AgentSidebar";
-export { AgentTerminals } from "./AgentTerminals";
 export { ExecutionTerminal } from "./ExecutionTerminal";
 export { DirectMessagesView } from "./DirectMessagesView";
 
@@ -116,7 +92,6 @@ export { DirectMessagesView } from "./DirectMessagesView";
 // ============================================
 export { CEODashboard } from "./CEODashboard";
 export { LiveDashboard } from "./LiveDashboard";
-export { CostDashboard } from "./CostDashboard";
 export { HealthDashboard } from "./HealthDashboard";
 export { AutomationDashboard } from "./AutomationDashboard";
 

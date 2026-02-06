@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
+import { AGENT_ORDER } from "@/lib/constants";
 
 // Lazily initialize Convex client (avoid build-time evaluation)
 function getConvexClient() {
@@ -30,7 +31,7 @@ function getConvexClient() {
 }
 
 // Valid values for validation
-const VALID_AGENTS = ["leo", "sam", "max", "ella"] as const;
+const VALID_AGENTS = AGENT_ORDER;
 const VALID_ACTIONS = ["completed", "in_progress", "comment"] as const;
 
 type AgentName = (typeof VALID_AGENTS)[number];
