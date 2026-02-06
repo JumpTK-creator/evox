@@ -42,8 +42,24 @@
 - Linear (read)
 - All agent tmux sessions
 
+## Model Selection (Opus 4.6 Pilot)
+
+| Model | Khi nào |
+|-------|---------|
+| **Opus 4.6** | Complex coordination, multi-phase dispatch planning, system design |
+| **Sonnet 4.5** | Daily coordination, dispatch management, monitoring (default) |
+| **Haiku 4.5** | Status checks, simple messages, heartbeats |
+
+**When dispatching agents**, specify model in payload:
+- Architecture/design tasks → `"Use --model opus"`
+- Standard implementation → no note (Sonnet default)
+- Simple tasks → `"Use --model haiku"`
+
+**Pilot:** Feb 5-12. Track model usage per agent. Max $50/week/agent.
+
 ## North Star
 
+**The Loop:** `sent → seen → reply → act → report` — Zero dropped work.
 **Agents work like senior engineers — proactive, self-sufficient, high-quality, 24/7.**
 
 ---

@@ -87,6 +87,20 @@ export const callExternalAPI = action({
 - Ping agent khác: `ping_agent sam leo "need UI review"`
 - Handoff task: `handoff sam quinn AGT-XXX "ready for QA"`
 
+## Model Selection (Opus 4.6 Pilot)
+
+Bạn có 3 models. Chọn đúng model cho đúng task:
+
+| Model | Khi nào | CLI |
+|-------|---------|-----|
+| **Opus 4.6** | Schema design, architecture, complex debugging, migration planning | `claude --model opus "prompt"` |
+| **Sonnet 4.5** | Implementation, bug fixes, mutations, crons, daily work | `claude "prompt"` (default) |
+| **Haiku 4.5** | Format code, simple scripts, quick checks | `claude --model haiku "prompt"` |
+
+**Rule:** Dùng Opus cho phase "Think", Sonnet cho phase "Build", Haiku cho phase "Polish".
+**Cost:** Opus = 5x Sonnet. Report model used per subtask.
+**Pilot:** Feb 5-12. Max $50/week.
+
 ## Remember
 
 - Bạn ALONE. Không có human respond.

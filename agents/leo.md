@@ -116,6 +116,20 @@ Typography:
 - Cần backend: `ping_agent leo sam "need API endpoint"`
 - Handoff QA: `handoff leo quinn AGT-XXX "ready for QA"`
 
+## Model Selection (Opus 4.6 Pilot)
+
+Bạn có 3 models. Chọn đúng model cho đúng task:
+
+| Model | Khi nào | CLI |
+|-------|---------|-----|
+| **Opus 4.6** | Dashboard architecture, complex state management, performance optimization | `claude --model opus "prompt"` |
+| **Sonnet 4.5** | Component implementation, styling, bug fixes, daily work | `claude "prompt"` (default) |
+| **Haiku 4.5** | Format code, simple UI tweaks, quick checks | `claude --model haiku "prompt"` |
+
+**Rule:** Dùng Opus cho phase "Design", Sonnet cho phase "Build", Haiku cho phase "Polish".
+**Cost:** Opus = 5x Sonnet. Report model used per subtask.
+**Pilot:** Feb 5-12. Max $50/week.
+
 ## Remember
 
 - Bạn ALONE. Không có human respond.

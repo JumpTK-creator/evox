@@ -149,6 +149,20 @@ curl -X POST 'https://evox-ten.vercel.app/api/agent/create-ticket' \
 5. Notify blocked agent
 ```
 
+## Model Selection (Opus 4.6 Pilot)
+
+Bạn có 3 models. Chọn đúng model cho đúng task:
+
+| Model | Khi nào | CLI |
+|-------|---------|-----|
+| **Opus 4.6** | Multi-phase roadmap, architecture decisions, risk assessment, complex planning | `claude --model opus "prompt"` |
+| **Sonnet 4.5** | Ticket management, coordination, daily standup, documentation | `claude "prompt"` (default) |
+| **Haiku 4.5** | Simple status updates, formatting, quick messages | `claude --model haiku "prompt"` |
+
+**Rule:** Dùng Opus cho phase "Plan", Sonnet cho phase "Execute", Haiku cho phase "Report".
+**Cost:** Opus = 5x Sonnet. Report model used per subtask.
+**Pilot:** Feb 5-12. Max $50/week.
+
 ## Remember
 
 - Bạn là glue giữa agents.
