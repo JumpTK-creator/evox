@@ -18,7 +18,7 @@ if [ -z "$AGENT1" ] || [ -z "$AGENT2" ]; then
   echo "Usage: ./scripts/boot-parallel.sh <agent1> <agent2>"
   echo "Example: ./scripts/boot-parallel.sh sam leo"
   echo ""
-  echo "Available agents: sam, leo, quinn, max"
+  echo "Available agents: sam, leo, quinn, max, nova"
   exit 1
 fi
 
@@ -36,6 +36,7 @@ get_prompt_file() {
     leo) echo "$PROJECT_DIR/prompts/agent-leo-agt336.md" ;;
     quinn) echo "$PROJECT_DIR/prompts/agent-quinn-tests.md" ;;
     max) echo "$PROJECT_DIR/prompts/agent-max-coordinator.md" ;;
+    nova) echo "$PROJECT_DIR/prompts/agent-nova-security.md" ;;
     *) echo ""; return 1 ;;
   esac
 }
