@@ -36,8 +36,8 @@ function verifyWebhookSignature(
   secret: string | undefined
 ): boolean {
   if (!secret) {
-    console.warn("GITHUB_WEBHOOK_SECRET not set, skipping signature verification");
-    return true;
+    console.error("GITHUB_WEBHOOK_SECRET not set — rejecting request (fail closed)");
+    return false;
   }
   if (!signature) {
     console.error("No signature provided in webhook request");

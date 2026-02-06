@@ -3,7 +3,7 @@ import { httpAction } from "./_generated/server";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { withAuth } from "./lib/httpAuth";
+import { withAuth, verifyWebhookHmac } from "./lib/httpAuth";
 import { VALID_AGENTS } from "./agentRegistry";
 
 const http = httpRouter();
@@ -73,9 +73,28 @@ http.route({
 http.route({
   path: "/webhook/github",
   method: "POST",
-  handler: httpAction(async (ctx, request) => { // Webhook: own auth
+  handler: httpAction(async (ctx, request) => { // Webhook: HMAC-SHA256 auth
     try {
-      const body = await request.json();
+      const secret = process.env.GITHUB_WEBHOOK_SECRET;
+      if (!secret) {
+        console.error("GITHUB_WEBHOOK_SECRET not set — rejecting webhook (fail closed)");
+        return new Response(
+          JSON.stringify({ error: "Webhook not configured" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const bodyText = await request.text();
+      const signature = request.headers.get("x-hub-signature-256");
+      if (!signature || !(await verifyWebhookHmac(bodyText, signature, secret, "sha256-hex"))) {
+        console.error("Invalid GitHub webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const body = JSON.parse(bodyText);
       const event = request.headers.get("x-github-event");
 
       if (event === "push") {
@@ -126,9 +145,28 @@ http.route({
 http.route({
   path: "/webhook/linear",
   method: "POST",
-  handler: httpAction(async (ctx, request) => { // Webhook: own auth
+  handler: httpAction(async (ctx, request) => { // Webhook: HMAC-SHA256 auth
     try {
-      const body = await request.json();
+      const secret = process.env.LINEAR_WEBHOOK_SECRET;
+      if (!secret) {
+        console.error("LINEAR_WEBHOOK_SECRET not set — rejecting webhook (fail closed)");
+        return new Response(
+          JSON.stringify({ error: "Webhook not configured" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const bodyText = await request.text();
+      const signature = request.headers.get("linear-signature");
+      if (!signature || !(await verifyWebhookHmac(bodyText, signature, secret, "hex"))) {
+        console.error("Invalid Linear webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const body = JSON.parse(bodyText);
       // Only dispatch to sam and leo (uppercase for Linear webhook matching)
       const AGENTS = VALID_AGENTS.filter((n) => ["sam", "leo"].includes(n)).map((n) => n.toUpperCase());
       let dispatched = false;
@@ -1891,9 +1929,28 @@ http.route({
 http.route({
   path: "/vercel-webhook",
   method: "POST",
-  handler: httpAction(async (ctx, request) => { // Webhook: own auth
+  handler: httpAction(async (ctx, request) => { // Webhook: HMAC-SHA256 auth
     try {
-      const payload = await request.json();
+      const secret = process.env.VERCEL_WEBHOOK_SECRET;
+      if (!secret) {
+        console.error("VERCEL_WEBHOOK_SECRET not set — rejecting webhook (fail closed)");
+        return new Response(
+          JSON.stringify({ error: "Webhook not configured" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const bodyText = await request.text();
+      const signature = request.headers.get("x-vercel-signature");
+      if (!signature || !(await verifyWebhookHmac(bodyText, signature, secret, "hex"))) {
+        console.error("Invalid Vercel webhook signature");
+        return new Response(
+          JSON.stringify({ error: "Invalid signature" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const payload = JSON.parse(bodyText);
 
       // Vercel sends different payload structures for different events
       // We handle: deployment.created, deployment.ready, deployment.error

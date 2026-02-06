@@ -78,16 +78,15 @@ function mapLinearPriority(
   }
 }
 
-// Verify webhook signature (optional but recommended)
+// Verify webhook signature (mandatory — fail closed if secret not configured)
 function verifyWebhookSignature(
   body: string,
   signature: string | null,
   secret: string | undefined
 ): boolean {
   if (!secret) {
-    // No secret configured, skip verification (dev mode)
-    console.warn("LINEAR_WEBHOOK_SECRET not set, skipping signature verification");
-    return true;
+    console.error("LINEAR_WEBHOOK_SECRET not set — rejecting request (fail closed)");
+    return false;
   }
   if (!signature) {
     console.error("No signature provided in webhook request");

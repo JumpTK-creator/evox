@@ -27,8 +27,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLinearIssue } from "@/lib/evox/linear-client";
 
+function authenticateRequest(request: NextRequest): NextResponse | null {
+  const apiKey = request.headers.get("x-api-key");
+  const expected = process.env.EVOX_API_KEY;
+
+  if (!expected) {
+    return NextResponse.json(
+      { success: false, error: "Server misconfigured" },
+      { status: 500 }
+    );
+  }
+
+  if (!apiKey || apiKey !== expected) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  return null; // Authenticated
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate request
+    const authError = authenticateRequest(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { title, description, priority, assignee } = body;
 
