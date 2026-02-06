@@ -237,6 +237,106 @@ export default defineSchema({
     .index("by_to_statusCode", ["to", "statusCode"]),
 
   // Activity tracking
+  activities: defineTable({
+    agent: v.id("agents"),
+    action: v.string(),
+    target: v.string(),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index("by_agent", ["agent"])
+    .index("by_created_at", ["createdAt"]),
+
+  activityEvents: defineTable({
+    agentId: v.id("agents"),
+    agentName: v.string(),
+    category: v.union(
+      v.literal("task"),
+      v.literal("git"),
+      v.literal("deploy"),
+      v.literal("system"),
+      v.literal("message")
+    ),
+    eventType: v.string(),
+    taskId: v.optional(v.id("tasks")),
+    linearIdentifier: v.optional(v.string()),
+    projectId: v.optional(v.id("projects")),
+    title: v.string(),
+    description: v.optional(v.string()),
+    metadata: v.optional(v.object({
+      fromStatus: v.optional(v.string()),
+      toStatus: v.optional(v.string()),
+      assignedTo: v.optional(v.string()),
+      subtaskCount: v.optional(v.number()),
+      subtasks: v.optional(v.array(v.string())),
+      commitHash: v.optional(v.string()),
+      branch: v.optional(v.string()),
+      filesChanged: v.optional(v.array(v.string())),
+      deploymentUrl: v.optional(v.string()),
+      deploymentStatus: v.optional(v.string()),
+      errorMessage: v.optional(v.string()),
+      source: v.optional(v.string()),
+    })),
+    timestamp: v.number(),
+  })
+    .index("by_timestamp", ["timestamp"])
+    .index("by_agent", ["agentId", "timestamp"])
+    .index("by_category", ["category", "timestamp"])
+    .index("by_task", ["taskId", "timestamp"])
+    .index("by_linearId", ["linearIdentifier", "timestamp"]),
+
+  notifications: defineTable({
+    to: v.id("agents"),
+    from: v.optional(v.id("agents")),
+    type: v.union(
+      v.literal("mention"),
+      v.literal("assignment"),
+      v.literal("status_change"),
+      v.literal("review_request"),
+      v.literal("comment"),
+      v.literal("dm")
+    ),
+    title: v.string(),
+    message: v.string(),
+    read: v.boolean(),
+    relatedTask: v.optional(v.id("tasks")),
+    messageId: v.optional(v.id("messages")),
+    commentId: v.optional(v.id("taskComments")),
+    createdAt: v.number(),
+  })
+    .index("by_recipient", ["to"])
+    .index("by_read_status", ["to", "read"])
+    .index("by_agent_time", ["to", "createdAt"]),
+
+  documents: defineTable({
+    title: v.string(),
+    content: v.string(),
+    author: v.id("agents"),
+    project: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_project", ["project"])
+    .index("by_author", ["author"]),
+
+  heartbeats: defineTable({
+    agent: v.id("agents"),
+    status: v.union(
+      v.literal("online"),
+      v.literal("idle"),
+      v.literal("offline"),
+      v.literal("busy")
+    ),
+    timestamp: v.number(),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_agent", ["agent"])
+    .index("by_timestamp", ["timestamp"]),
+
+  settings: defineTable({
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 
   // Webhook events from GitHub/Vercel (AGT-128: Max Visibility Pipeline)
   webhookEvents: defineTable({
@@ -341,6 +441,56 @@ export default defineSchema({
     .index("by_priority", ["status", "priority", "createdAt"]),
 
   // Activity logs (Linear-style events)
+  activityLogs: defineTable({
+    agentId: v.id("agents"),
+    agentName: v.string(),
+    eventType: v.union(
+      v.literal("created"),
+      v.literal("assigned"),
+      v.literal("moved"),
+      v.literal("completed"),
+      v.literal("commented")
+    ),
+    taskId: v.optional(v.id("tasks")),
+    linearIdentifier: v.optional(v.string()),
+    fromStatus: v.optional(v.string()),
+    toStatus: v.optional(v.string()),
+    assignedTo: v.optional(v.id("agents")),
+    comment: v.optional(v.string()),
+    timestamp: v.number(),
+  })
+    .index("by_timestamp", ["timestamp"])
+    .index("by_agent", ["agentId", "timestamp"])
+    .index("by_task", ["taskId", "timestamp"])
+    .index("by_type", ["eventType", "timestamp"]),
+
+  fileActivity: defineTable({
+    agentName: v.string(),
+    filePath: v.string(),
+    action: v.union(
+      v.literal("read"),
+      v.literal("write"),
+      v.literal("create"),
+      v.literal("delete")
+    ),
+    taskId: v.optional(v.id("tasks")),
+    linearIdentifier: v.optional(v.string()),
+    linesChanged: v.optional(v.number()),
+    timestamp: v.number(),
+  })
+    .index("by_agent", ["agentName", "timestamp"])
+    .index("by_file", ["filePath", "timestamp"])
+    .index("by_task", ["taskId", "timestamp"])
+    .index("by_timestamp", ["timestamp"]),
+
+  systemState: defineTable({
+    key: v.string(),
+    paused: v.boolean(),
+    pausedAt: v.optional(v.number()),
+    pauseReason: v.optional(v.string()),
+    pausedBy: v.optional(v.string()),
+    resumedAt: v.optional(v.number()),
+  }).index("by_key", ["key"]),
 
   // AGT-211: Rate Limiting
   rateLimits: defineTable({
@@ -802,6 +952,86 @@ export default defineSchema({
 
   // AGT-249: Self-Spawning Agents — Worker Pools
   // Parent agents spawn sub-agents (workers) for parallel task execution
+
+  debates: defineTable({
+    topic: v.string(),
+    context: v.optional(v.string()),
+    initiatedBy: v.string(),
+    positions: v.array(v.object({
+      agent: v.string(),
+      stance: v.string(),
+      arguments: v.array(v.string()),
+      evidence: v.optional(v.array(v.string())),
+      submittedAt: v.number(),
+    })),
+    status: v.union(
+      v.literal("open"),
+      v.literal("resolved"),
+      v.literal("escalated"),
+      v.literal("closed")
+    ),
+    resolution: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+    votes: v.optional(v.array(v.object({
+      agent: v.string(),
+      position: v.number(),
+      votedAt: v.number(),
+    }))),
+    taskRef: v.optional(v.string()),
+    outcomeApplied: v.boolean(),
+    impactMeasured: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status", "createdAt"])
+    .index("by_initiator", ["initiatedBy", "createdAt"])
+    .index("by_task", ["taskRef"]),
+
+  visionProgress: defineTable({
+    metric: v.string(),
+    description: v.string(),
+    unit: v.string(),
+    target: v.number(),
+    current: v.number(),
+    trend: v.union(
+      v.literal("up"),
+      v.literal("down"),
+      v.literal("stable")
+    ),
+    progressPercent: v.number(),
+    history: v.array(v.object({
+      value: v.number(),
+      timestamp: v.number(),
+    })),
+    contributions: v.optional(v.array(v.object({
+      agent: v.string(),
+      task: v.string(),
+      impact: v.number(),
+      timestamp: v.number(),
+    }))),
+    onTrack: v.boolean(),
+    risk: v.optional(v.string()),
+    createdAt: v.number(),
+    lastUpdated: v.number(),
+  })
+    .index("by_metric", ["metric"])
+    .index("by_onTrack", ["onTrack"]),
+
+  automationMetrics: defineTable({
+    key: v.string(),
+    progressPercent: v.number(),
+    milestones: v.array(v.object({
+      percent: v.number(),
+      label: v.string(),
+      achieved: v.boolean(),
+      achievedAt: v.optional(v.number()),
+      achievedBy: v.optional(v.string()),
+      notes: v.optional(v.string()),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 
   // AGT-92: Execution Engine Core — Track execution runs
   executions: defineTable({
