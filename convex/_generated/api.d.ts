@@ -19,6 +19,7 @@ import type * as agentMemory from "../agentMemory.js";
 import type * as agentMesh from "../agentMesh.js";
 import type * as agentMessages from "../agentMessages.js";
 import type * as agentMessaging from "../agentMessaging.js";
+import type * as agentProfiles from "../agentProfiles.js";
 import type * as agentRegistry from "../agentRegistry.js";
 import type * as agentStats from "../agentStats.js";
 import type * as agentTemplates from "../agentTemplates.js";
@@ -95,6 +96,7 @@ declare const fullApi: ApiFromModules<{
   agentMesh: typeof agentMesh;
   agentMessages: typeof agentMessages;
   agentMessaging: typeof agentMessaging;
+  agentProfiles: typeof agentProfiles;
   agentRegistry: typeof agentRegistry;
   agentStats: typeof agentStats;
   agentTemplates: typeof agentTemplates;
