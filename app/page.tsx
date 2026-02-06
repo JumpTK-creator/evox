@@ -27,7 +27,7 @@ import { ActivityFeed } from "@/components/evox/ActivityFeed";
 import { AgentsPage } from "@/components/dashboard-v2/agents-page";
 import type { KanbanTask } from "@/components/dashboard-v2/task-card";
 import type { DateFilterMode } from "@/components/dashboard-v2/date-filter";
-import { sortAgents } from "@/lib/constants";
+import { sortAgents, AGENT_ORDER } from "@/lib/constants";
 
 /** AGT-181: 2-panel layout — [Sidebar 220px] | [Kanban flex-1]. Agent Profile → Modal, Activity → Drawer */
 export default function Home() {
@@ -70,7 +70,9 @@ export default function Home() {
 
   const agentsList = useMemo(() => {
     if (!Array.isArray(agents) || agents.length === 0) return [];
-    return sortAgents(agents as { _id: Id<"agents">; name: string; role: string; status: string; avatar: string; lastSeen?: number }[]);
+    const active = (agents as { _id: Id<"agents">; name: string; role: string; status: string; avatar: string; lastSeen?: number }[])
+      .filter((a) => (AGENT_ORDER as readonly string[]).includes(a.name.toLowerCase()));
+    return sortAgents(active);
   }, [agents]);
 
   const activeCount = useMemo(
