@@ -13,25 +13,7 @@ const statusDot: Record<string, string> = {
   offline: "bg-white/20",
 };
 
-const roleLabels: Record<string, string> = {
-  pm: "PM",
-  backend: "Backend",
-  frontend: "Frontend",
-  qa: "QA",
-};
-
-/** AGT-177/AGT-233: Agent order always MAX → SAM → LEO → QUINN */
-const AGENT_ORDER = ["max", "sam", "leo", "quinn"];
-function sortAgents<T extends { name: string }>(list: T[]): T[] {
-  return [...list].sort((a, b) => {
-    const i = AGENT_ORDER.indexOf(a.name.toLowerCase());
-    const j = AGENT_ORDER.indexOf(b.name.toLowerCase());
-    if (i === -1 && j === -1) return a.name.localeCompare(b.name);
-    if (i === -1) return 1;
-    if (j === -1) return -1;
-    return i - j;
-  });
-}
+import { ROLE_LABELS as roleLabels, sortAgents } from "@/lib/constants";
 
 interface AgentSidebarProps {
   selectedAgentId: Id<"agents"> | null;

@@ -35,9 +35,7 @@ export { CompletionBar } from "./CompletionBar";
 // FEEDS & LISTS
 // ============================================
 export { ActivityFeed } from "./ActivityFeed";
-export { AgentActivityFeed } from "./AgentActivityFeed";
 export { CommunicationLog } from "./CommunicationLog";
-export { AgentCommunicationFeed } from "./AgentCommunicationFeed";
 export { DailyNotesList } from "./DailyNotesList";
 export { DispatchQueue } from "./DispatchQueue";
 
@@ -117,9 +115,7 @@ export { DirectMessagesView } from "./DirectMessagesView";
 // DASHBOARDS (Full Page)
 // ============================================
 export { CEODashboard } from "./CEODashboard";
-export { SimpleCEODashboard } from "./SimpleCEODashboard";
 export { LiveDashboard } from "./LiveDashboard";
-export { ElonDashboard } from "./ElonDashboard";
 export { CostDashboard } from "./CostDashboard";
 export { HealthDashboard } from "./HealthDashboard";
 export { AutomationDashboard } from "./AutomationDashboard";

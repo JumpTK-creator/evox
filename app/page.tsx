@@ -26,23 +26,11 @@ import { DirectMessagesView } from "@/components/evox/DirectMessagesView";
 import { CommunicationLog } from "@/components/evox/CommunicationLog";
 import { CEODashboard } from "@/components/evox/CEODashboard";
 import { StatsPage } from "@/components/evox/StatsPage";
-import { RichActivityFeed } from "@/components/evox/RichActivityFeed";
+import { ActivityFeed } from "@/components/evox/ActivityFeed";
 import { AgentsPage } from "@/components/dashboard-v2/agents-page";
 import type { KanbanTask } from "@/components/dashboard-v2/task-card";
 import type { DateFilterMode } from "@/components/dashboard-v2/date-filter";
-
-/** Agent order: MAX → SAM → LEO → QUINN */
-const AGENT_ORDER = ["max", "sam", "leo", "quinn"];
-function sortAgents<T extends { name: string }>(list: T[]): T[] {
-  return [...list].sort((a, b) => {
-    const i = AGENT_ORDER.indexOf(a.name.toLowerCase());
-    const j = AGENT_ORDER.indexOf(b.name.toLowerCase());
-    if (i === -1 && j === -1) return a.name.localeCompare(b.name);
-    if (i === -1) return 1;
-    if (j === -1) return -1;
-    return i - j;
-  });
-}
+import { sortAgents } from "@/lib/constants";
 
 /** AGT-181: 2-panel layout — [Sidebar 220px] | [Kanban flex-1]. Agent Profile → Modal, Activity → Drawer */
 export default function Home() {
@@ -198,7 +186,7 @@ export default function Home() {
               </div>
             )}
             {activeViewTab === "activity" && (
-              <RichActivityFeed className="h-full" />
+              <ActivityFeed className="h-full" />
             )}
             {activeViewTab === "health" && (
               <HealthDashboard className="h-full" />
@@ -207,7 +195,7 @@ export default function Home() {
               <AutomationDashboard className="h-full" />
             )}
             {activeViewTab === "messages" && (
-              <DirectMessagesView currentAgentName="max" className="h-full" />
+              <DirectMessagesView currentAgentName="son" className="h-full" />
             )}
             {activeViewTab === "comms" && (
               <CommunicationLog className="h-full" />

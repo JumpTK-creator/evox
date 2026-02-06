@@ -17,17 +17,7 @@ import {
   getStatusLabel,
 } from "@/components/evox/AgentStatusIndicator";
 import { formatDistanceToNow } from "date-fns";
-
-/** Agent order: MAX → SAM → LEO → QUINN */
-const AGENT_ORDER = ["max", "sam", "leo", "quinn"];
-
-const ROLE_LABELS: Record<string, string> = {
-  pm: "PM",
-  backend: "Backend",
-  frontend: "Frontend",
-  qa: "QA",
-  design: "Design",
-};
+import { AGENT_ORDER, ROLE_LABELS } from "@/lib/constants";
 
 interface AgentStatusStripProps {
   className?: string;
