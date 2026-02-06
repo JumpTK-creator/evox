@@ -75,7 +75,7 @@ export function AgentCommsWidget({ limit = 8, channel }: AgentCommsWidgetProps) 
     return (
       <div className="bg-surface-1/80 rounded-xl p-4 border border-border-default">
         <h3 className="text-sm font-medium text-secondary mb-3">Agent Comms</h3>
-        <div className="text-center text-primary0 text-sm py-4">
+        <div className="text-center text-secondary text-sm py-4">
           No recent communications
         </div>
       </div>

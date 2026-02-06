@@ -163,7 +163,7 @@ export function MobileCEODashboard({ className }: MobileCEODashboardProps) {
       <div className={cn("flex items-center justify-center min-h-[50vh]", className)}>
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-2 border-gray-500 border-t-blue-500 rounded-full mx-auto mb-4" />
-          <p className="text-sm text-primary0">Loading dashboard...</p>
+          <p className="text-sm text-secondary">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -231,7 +231,7 @@ export function MobileCEODashboard({ className }: MobileCEODashboardProps) {
               <ActivityRow key={event._id} event={event} />
             ))
           ) : (
-            <p className="text-xs text-primary0 text-center py-4">No recent activity</p>
+            <p className="text-xs text-secondary text-center py-4">No recent activity</p>
           )}
         </div>
       </div>

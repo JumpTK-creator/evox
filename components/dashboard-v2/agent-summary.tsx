@@ -7,7 +7,7 @@ interface AgentSummaryProps {
 
 export function AgentSummary({ total, active }: AgentSummaryProps) {
   return (
-    <p className="px-3 py-2 text-xs text-primary0">
+    <p className="px-3 py-2 text-xs text-secondary">
       {total} total, {active} active
     </p>
   );

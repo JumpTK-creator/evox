@@ -48,7 +48,7 @@ export function ProposalList({ limit = 5 }: ProposalListProps) {
       <div className="bg-surface-1/80 rounded-xl p-4 border border-border-default">
         <h3 className="text-sm font-medium text-secondary mb-3">Proposals</h3>
         <div className="text-center py-6">
-          <p className="text-primary0 text-sm">No active proposals</p>
+          <p className="text-secondary text-sm">No active proposals</p>
           <p className="text-tertiary text-[11px] mt-1">
             Agents can start debates to propose features
           </p>

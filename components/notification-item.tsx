@@ -38,9 +38,9 @@ const typeColors: Record<string, string> = {
   mention: "text-blue-500",
   assignment: "text-green-500",
   status_change: "text-yellow-500",
-  comment: "text-primary0",
-  review_request: "text-primary0",
-  dm: "text-primary0",
+  comment: "text-secondary",
+  review_request: "text-secondary",
+  dm: "text-secondary",
 };
 
 export function NotificationItem({

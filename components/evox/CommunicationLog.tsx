@@ -75,7 +75,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-white">Communication Log</h2>
-            <p className="text-xs sm:text-sm text-primary0 mt-0.5 sm:mt-1">
+            <p className="text-xs sm:text-sm text-secondary mt-0.5 sm:mt-1">
               Real-time agent messages
             </p>
           </div>
@@ -92,7 +92,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
         <div className="mt-4 space-y-3">
           {/* Agent Filter */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-primary0 mb-2 block">
+            <label className="text-xs font-semibold uppercase tracking-wider text-secondary mb-2 block">
               Filter by Agent
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -116,7 +116,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
 
           {/* Type Filter */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-primary0 mb-2 block">
+            <label className="text-xs font-semibold uppercase tracking-wider text-secondary mb-2 block">
               Filter by Type
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -150,7 +150,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
         >
           {messages === undefined ? (
             <div className="flex items-center justify-center h-full">
-              <span className="animate-pulse text-sm text-primary0">
+              <span className="animate-pulse text-sm text-secondary">
                 Loading messages...
               </span>
             </div>
@@ -158,7 +158,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <span className="text-4xl mb-3 block">📡</span>
-                <p className="text-sm text-primary0">No messages found</p>
+                <p className="text-sm text-secondary">No messages found</p>
                 <p className="text-xs text-tertiary mt-1">
                   Try adjusting your filters
                 </p>
@@ -197,7 +197,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
                       >
                         {msg.type}
                       </span>
-                      <span className="text-[10px] sm:text-xs text-primary0">
+                      <span className="text-[10px] sm:text-xs text-secondary">
                         {formatTime(msg.timestamp)}
                       </span>
                     </div>
@@ -255,7 +255,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
 
             {analytics === undefined ? (
               <div className="flex items-center justify-center py-8">
-                <span className="animate-pulse text-sm text-primary0">
+                <span className="animate-pulse text-sm text-secondary">
                   Loading analytics...
                 </span>
               </div>
@@ -263,7 +263,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
               <div className="space-y-6">
                 {/* Total Messages */}
                 <div className="bg-surface-1 border border-border-default rounded-lg p-4">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-primary0 mb-1">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-secondary mb-1">
                     Total Messages
                   </div>
                   <div className="text-2xl font-bold text-white">
@@ -273,7 +273,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
 
                 {/* Average Response Time */}
                 <div className="bg-surface-1 border border-border-default rounded-lg p-4">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-primary0 mb-1">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-secondary mb-1">
                     Avg Response Time
                   </div>
                   <div className="text-2xl font-bold text-white">
@@ -285,7 +285,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
 
                 {/* Message Volume by Agent */}
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-primary0 mb-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-secondary mb-3">
                     Message Volume
                   </div>
                   <div className="space-y-2">
@@ -317,7 +317,7 @@ export function CommunicationLog({ className }: CommunicationLogProps) {
 
                 {/* Most Active Pairs */}
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-primary0 mb-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-secondary mb-3">
                     Most Active Pairs
                   </div>
                   <div className="space-y-2">

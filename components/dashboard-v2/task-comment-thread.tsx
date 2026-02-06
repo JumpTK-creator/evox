@@ -75,10 +75,10 @@ export function TaskCommentThread({ taskId }: TaskCommentThreadProps) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <h4 className="text-xs font-semibold uppercase tracking-[0.05em] text-primary0 mb-2">Comments</h4>
+      <h4 className="text-xs font-semibold uppercase tracking-[0.05em] text-secondary mb-2">Comments</h4>
       <div className="flex-1 overflow-y-auto space-y-3 min-h-0 border border-border-default rounded-lg bg-base p-3">
         {!comments || comments.length === 0 ? (
-          <p className="text-sm text-primary0 py-4">No comments yet. Agents will post updates here.</p>
+          <p className="text-sm text-secondary py-4">No comments yet. Agents will post updates here.</p>
         ) : (
           (comments as TaskComment[]).map((c) => (
             <div key={c._id} className="flex gap-2">
@@ -93,7 +93,7 @@ export function TaskCommentThread({ taskId }: TaskCommentThreadProps) {
                     {c.agentName ?? "Unknown"}
                   </span>
                   <span
-                    className="text-xs text-primary0"
+                    className="text-xs text-secondary"
                     title={c.createdAt != null ? new Date(c.createdAt).toLocaleString() : undefined}
                   >
                     {c.createdAt != null ? formatDistanceToNow(c.createdAt, { addSuffix: true }) : ""}
@@ -127,7 +127,7 @@ export function TaskCommentThread({ taskId }: TaskCommentThreadProps) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Add a comment..."
-            className="flex-1 min-h-[80px] rounded border border-border-default bg-surface-1 px-3 py-2 text-sm text-primary placeholder:text-primary0 focus:outline-none focus:ring-1 focus:ring-gray-500"
+            className="flex-1 min-h-[80px] rounded border border-border-default bg-surface-1 px-3 py-2 text-sm text-primary placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-gray-500"
             rows={2}
           />
           <button

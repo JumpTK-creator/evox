@@ -47,7 +47,7 @@ export function AgentStrip({ onAgentClick }: AgentStripProps) {
           >
             <AgentStatusIndicator status={a.status} showPulse={isWorking} size="sm" />
             <span className="text-xs font-semibold text-primary">{a.name}</span>
-            <span className="text-xs text-primary0">·</span>
+            <span className="text-xs text-secondary">·</span>
             <span className="font-mono text-xs text-secondary">{label}</span>
           </button>
         );

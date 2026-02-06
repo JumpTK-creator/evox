@@ -173,14 +173,14 @@ export function AgentCard({
                 {statusLabels[normalizedStatus] ?? statusLabels.offline}
               </Badge>
               <span className="text-xs text-tertiary">•</span>
-              <span className="text-xs text-primary0">
+              <span className="text-xs text-secondary">
                 {sessionBased ? "Session-based" : getRelativeTime(lastActive)}
               </span>
             </div>
 
             {/* AGT-147: Task count badge */}
             {taskCounts && (
-              <p className="text-xs text-primary0">
+              <p className="text-xs text-secondary">
                 {taskCounts.backlog} backlog · {taskCounts.inProgress} in progress · {taskCounts.done} done
               </p>
             )}

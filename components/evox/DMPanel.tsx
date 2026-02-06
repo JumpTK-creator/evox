@@ -95,7 +95,7 @@ export function DMPanel({
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-primary0 hover:bg-surface-4 hover:text-white"
+          className="rounded p-1 text-secondary hover:bg-surface-4 hover:text-white"
           aria-label="Close"
         >
           ✕
@@ -106,11 +106,11 @@ export function DMPanel({
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-0">
         {conversation === undefined ? (
           <div className="flex items-center justify-center h-full">
-            <span className="animate-pulse text-sm text-primary0">Loading...</span>
+            <span className="animate-pulse text-sm text-secondary">Loading...</span>
           </div>
         ) : conversation.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-primary0">No messages yet. Start the conversation!</p>
+            <p className="text-sm text-secondary">No messages yet. Start the conversation!</p>
           </div>
         ) : (
           <>

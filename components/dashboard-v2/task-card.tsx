@@ -95,7 +95,7 @@ export function TaskCard({ task, onClick, onAssigneeClick }: TaskCardProps) {
           </span>
         ))}
         {task.updatedAt != null && (
-          <span className="text-xs text-primary0">{formatDistanceToNow(task.updatedAt, { addSuffix: true })}</span>
+          <span className="text-xs text-secondary">{formatDistanceToNow(task.updatedAt, { addSuffix: true })}</span>
         )}
       </div>
     </button>

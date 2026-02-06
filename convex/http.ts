@@ -5,8 +5,18 @@ import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { withAuth, verifyWebhookHmac } from "./lib/httpAuth";
 import { VALID_AGENTS } from "./agentRegistry";
+import { corsRouter } from "convex-helpers/server/cors";
 
 const http = httpRouter();
+const cors = corsRouter(http, {
+  allowedOrigins: [
+    "https://evox-ten.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+  ],
+  allowedHeaders: ["Content-Type", "x-api-key"],
+  allowCredentials: false,
+});
 
 // ============================================================
 // STATUS ENDPOINT (Phase 5: OpenClaw Integration)
@@ -16,7 +26,7 @@ const http = httpRouter();
  * GET /status — System status overview for OpenClaw
  * Returns: agents, pending dispatches, recent activity
  */
-http.route({
+cors.route({
   path: "/status",
   method: "GET",
   handler: withAuth(async (ctx) => {
@@ -70,7 +80,7 @@ http.route({
  * POST /webhook/github — Handle GitHub push events
  * Parses "closes AGT-XXX" from commits and marks tasks completed
  */
-http.route({
+cors.route({
   path: "/webhook/github",
   method: "POST",
   handler: httpAction(async (ctx, request) => { // Webhook: HMAC-SHA256 auth
@@ -142,7 +152,7 @@ http.route({
  * 2. Existing issue assigned to Sam/Leo
  * 3. Issue moved to "Todo" or "In Progress" with Sam/Leo assignee
  */
-http.route({
+cors.route({
   path: "/webhook/linear",
   method: "POST",
   handler: httpAction(async (ctx, request) => { // Webhook: HMAC-SHA256 auth
@@ -271,7 +281,7 @@ http.route({
  *
  * Usage: curl -X POST $CONVEX_URL/bootContext -d '{"agentName":"sam","ticketId":"AGT-158"}'
  */
-http.route({
+cors.route({
   path: "/bootContext",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -463,7 +473,7 @@ http.route({
 /**
  * GET /bootContext?agentName=sam&ticketId=AGT-158 — Same as POST but via query params
  */
-http.route({
+cors.route({
   path: "/bootContext",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -562,7 +572,7 @@ http.route({
 });
 
 // POST /api/heartbeat - Update agent heartbeat
-http.route({
+cors.route({
   path: "/api/heartbeat",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -659,7 +669,7 @@ http.route({
 });
 
 // GET /api/heartbeat?agentId=<name> - Get single agent status
-http.route({
+cors.route({
   path: "/api/heartbeat",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -705,7 +715,7 @@ http.route({
 });
 
 // POST /api/linear-sync - Trigger Linear sync
-http.route({
+cors.route({
   path: "/api/linear-sync",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -738,7 +748,7 @@ http.route({
  * POST /comment — Post a comment on a task
  * Body: { taskId: "...", agentName: "sam", content: "..." }
  */
-http.route({
+cors.route({
   path: "/comment",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -796,7 +806,7 @@ http.route({
 /**
  * GET /comments?taskId=AGT-XXX — Get comments for a task
  */
-http.route({
+cors.route({
   path: "/comments",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -853,7 +863,7 @@ http.route({
  * POST /dm — Send a direct message from one agent to another
  * Body: { from: "sam", to: "leo", content: "...", taskId?: "AGT-XXX", priority?: "urgent" }
  */
-http.route({
+cors.route({
   path: "/dm",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -912,7 +922,7 @@ http.route({
 /**
  * GET /dms?agent=sam&unreadOnly=true — Get DMs for an agent
  */
-http.route({
+cors.route({
   path: "/dms",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -955,7 +965,7 @@ http.route({
  * POST /v2/comment — Post a comment using unified messaging
  * Body: { taskId: "AGT-XXX" or convex ID, agentName: "sam", content: "..." }
  */
-http.route({
+cors.route({
   path: "/v2/comment",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1012,7 +1022,7 @@ http.route({
 /**
  * GET /v2/comments?taskId=AGT-XXX — Get comments using unified messaging
  */
-http.route({
+cors.route({
   path: "/v2/comments",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1077,7 +1087,7 @@ http.route({
  * POST /v2/dm — Send a DM using unified messaging
  * Body: { from: "sam", to: "leo", content: "...", taskId?: "AGT-XXX", priority?: "urgent" }
  */
-http.route({
+cors.route({
   path: "/v2/dm",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1138,7 +1148,7 @@ http.route({
 /**
  * GET /v2/dms?agent=sam&unreadOnly=true — Get DMs using unified messaging
  */
-http.route({
+cors.route({
   path: "/v2/dms",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1176,7 +1186,7 @@ http.route({
 /**
  * GET /v2/unread?agent=sam — Get unread count + messages for boot protocol
  */
-http.route({
+cors.route({
   path: "/v2/unread",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1213,7 +1223,7 @@ http.route({
  * POST /v2/mark-read — Mark a message as read
  * Body: { messageId: "..." }
  */
-http.route({
+cors.route({
   path: "/v2/mark-read",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1250,7 +1260,7 @@ http.route({
  * POST /v2/mark-all-read — Mark all messages as read for an agent
  * Body: { agentName: "sam" }
  */
-http.route({
+cors.route({
   path: "/v2/mark-all-read",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1290,7 +1300,7 @@ http.route({
  * - If 'channel' is provided: posts to channel
  * - Must have either 'to' or 'channel'
  */
-http.route({
+cors.route({
   path: "/v2/sendMessage",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1387,7 +1397,7 @@ http.route({
  * GET /v2/getMessages?agent=sam — Get all messages for agent
  * Returns DMs, @mentions, and relevant channel messages
  */
-http.route({
+cors.route({
   path: "/v2/getMessages",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1455,7 +1465,7 @@ http.route({
  * POST /github-webhook — Handle GitHub push events
  * Parses commit messages for AGT-XX and posts comments to Linear
  */
-http.route({
+cors.route({
   path: "/github-webhook",
   method: "POST",
   handler: httpAction(async (ctx, request) => { // Webhook: own auth
@@ -1529,7 +1539,7 @@ http.route({
  * GET /getNextDispatch — Get next pending dispatch for daemon
  * Returns the oldest pending dispatch with agent info
  */
-http.route({
+cors.route({
   path: "/getNextDispatch",
   method: "GET",
   handler: withAuth(async (ctx) => {
@@ -1579,7 +1589,7 @@ http.route({
  * GET /getNextDispatchForAgent — Get next pending dispatch for specific agent
  * Query param: agent (sam, leo)
  */
-http.route({
+cors.route({
   path: "/getNextDispatchForAgent",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1640,7 +1650,7 @@ http.route({
  * POST /markDispatchRunning — Mark dispatch as running (daemon calls this)
  * Query param: dispatchId
  */
-http.route({
+cors.route({
   path: "/markDispatchRunning",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1677,7 +1687,7 @@ http.route({
  * GET /markDispatchCompleted — Mark dispatch as completed (daemon calls this after Claude exits)
  * Query params: dispatchId, result (optional)
  */
-http.route({
+cors.route({
   path: "/markDispatchCompleted",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1716,7 +1726,7 @@ http.route({
  * GET /markDispatchFailed — Mark dispatch as failed (daemon calls this on error)
  * Query params: dispatchId, error
  */
-http.route({
+cors.route({
   path: "/markDispatchFailed",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1755,7 +1765,7 @@ http.route({
  * POST /createDispatch — Create a new dispatch (for Max to push work to agents)
  * Body: { agentName: "sam", command: "execute_ticket", ticket: "AGT-215" }
  */
-http.route({
+cors.route({
   path: "/createDispatch",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1807,7 +1817,7 @@ http.route({
  * POST /cleanupDuplicateDispatches — Remove duplicate pending dispatches
  * Keeps the oldest dispatch for each agent+ticket combination
  */
-http.route({
+cors.route({
   path: "/cleanupDuplicateDispatches",
   method: "POST",
   handler: withAuth(async (ctx) => {
@@ -1830,7 +1840,7 @@ http.route({
 /**
  * GET /dispatchQueue?agent=<name> — Get dispatch queue summary for an agent
  */
-http.route({
+cors.route({
   path: "/dispatchQueue",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -1866,7 +1876,7 @@ http.route({
  * POST /cleanupStuckDispatches — Cleanup dispatches stuck in running state
  * Body: { maxAgeMinutes?: number } - Default 30 minutes
  */
-http.route({
+cors.route({
   path: "/cleanupStuckDispatches",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1893,7 +1903,7 @@ http.route({
  * POST /resetAgentDispatches — Force reset all running dispatches for an agent
  * Body: { agentName: "sam" }
  */
-http.route({
+cors.route({
   path: "/resetAgentDispatches",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -1926,7 +1936,7 @@ http.route({
  * POST /vercel-webhook — Handle Vercel deployment events
  * Posts status updates to Linear and creates P0 bug tickets on failure
  */
-http.route({
+cors.route({
   path: "/vercel-webhook",
   method: "POST",
   handler: httpAction(async (ctx, request) => { // Webhook: HMAC-SHA256 auth
@@ -1983,7 +1993,7 @@ http.route({
  * GET /alerts — List alerts with optional filters
  * Query params: type, severity, status, agentName, limit
  */
-http.route({
+cors.route({
   path: "/alerts",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2021,7 +2031,7 @@ http.route({
  * GET /alerts/stats — Get alert statistics
  * Query params: since (timestamp)
  */
-http.route({
+cors.route({
   path: "/alerts/stats",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2050,7 +2060,7 @@ http.route({
 /**
  * GET /alerts/critical — Get unacknowledged critical alerts
  */
-http.route({
+cors.route({
   path: "/alerts/critical",
   method: "GET",
   handler: withAuth(async (ctx) => {
@@ -2075,7 +2085,7 @@ http.route({
  * POST /alerts/acknowledge — Acknowledge an alert
  * Body: { alertId: string, acknowledgedBy?: string }
  */
-http.route({
+cors.route({
   path: "/alerts/acknowledge",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2113,7 +2123,7 @@ http.route({
  * GET /alerts/preferences — Get alert preferences
  * Query param: target (e.g., "global", "sam")
  */
-http.route({
+cors.route({
   path: "/alerts/preferences",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2141,7 +2151,7 @@ http.route({
  * POST /alerts/preferences — Update alert preferences
  * Body: { target, enabledTypes?, channels?, telegramChatId?, email?, ... }
  */
-http.route({
+cors.route({
   path: "/alerts/preferences",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2179,7 +2189,7 @@ http.route({
  * POST /alerts/snooze — Snooze alerts for a target
  * Body: { target: string, durationMinutes: number }
  */
-http.route({
+cors.route({
   path: "/alerts/snooze",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2221,7 +2231,7 @@ http.route({
  * GET /learnings — Query learnings with optional filters
  * Query params: agent, topic, query, limit
  */
-http.route({
+cors.route({
   path: "/learnings",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2279,7 +2289,7 @@ http.route({
  * POST /submitLearning — Submit a learning after completing a task
  * Body: { agentName, taskId, taskTitle, summary, filesChanged, ... }
  */
-http.route({
+cors.route({
   path: "/submitLearning",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2339,7 +2349,7 @@ http.route({
 /**
  * GET /learnings/stats — Get learning statistics
  */
-http.route({
+cors.route({
   path: "/learnings/stats",
   method: "GET",
   handler: withAuth(async (ctx) => {
@@ -2368,7 +2378,7 @@ http.route({
  * POST /triggerQA — Trigger a new QA run
  * Body: { triggeredBy: "github"|"vercel"|"manual"|"agent", commitHash?, prNumber? }
  */
-http.route({
+cors.route({
   path: "/triggerQA",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2406,7 +2416,7 @@ http.route({
 /**
  * GET /getQAStatus?runId=qa-XXXX — Get QA run status
  */
-http.route({
+cors.route({
   path: "/getQAStatus",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2448,7 +2458,7 @@ http.route({
  * POST /updateQATest — Update a specific test result
  * Body: { runId, testName, status, duration?, output? }
  */
-http.route({
+cors.route({
   path: "/updateQATest",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2489,7 +2499,7 @@ http.route({
  * POST /completeQARun — Complete a QA run
  * Body: { runId, cancelled?: boolean }
  */
-http.route({
+cors.route({
   path: "/completeQARun",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2527,7 +2537,7 @@ http.route({
  * GET /qaRuns — List recent QA runs
  * Query params: limit, status
  */
-http.route({
+cors.route({
   path: "/qaRuns",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2559,7 +2569,7 @@ http.route({
  * GET /qaStats — Get QA statistics
  * Query params: since (timestamp)
  */
-http.route({
+cors.route({
   path: "/qaStats",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2593,7 +2603,7 @@ http.route({
  * GET /getAgentMessages?agent=sam — Get unread messages for agent
  * Returns DMs and @mentions for the agent
  */
-http.route({
+cors.route({
   path: "/getAgentMessages",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -2631,7 +2641,7 @@ http.route({
  * Body: { agentName: string, messageId?: string }
  * If messageId provided, marks one message; otherwise marks all
  */
-http.route({
+cors.route({
   path: "/markMessagesRead",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2675,7 +2685,7 @@ http.route({
  * POST /postToChannel — Post a message to a team channel
  * Body: { from: string, channel: string, message: string }
  */
-http.route({
+cors.route({
   path: "/postToChannel",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2732,7 +2742,7 @@ http.route({
 /**
  * POST /createUrgentDispatch — Create urgent (P0) dispatch
  */
-http.route({
+cors.route({
   path: "/createUrgentDispatch",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2760,7 +2770,7 @@ http.route({
 /**
  * POST /sendUrgentMessage — Send urgent alert to agent
  */
-http.route({
+cors.route({
   path: "/sendUrgentMessage",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2783,7 +2793,7 @@ http.route({
 /**
  * POST /interruptAgent — Stop agent's current task
  */
-http.route({
+cors.route({
   path: "/interruptAgent",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2820,7 +2830,7 @@ http.route({
 /**
  * POST /pingAgent — Send urgent notification to agent
  */
-http.route({
+cors.route({
   path: "/pingAgent",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2854,7 +2864,7 @@ http.route({
 /**
  * POST /handoff — Transfer work to another agent
  */
-http.route({
+cors.route({
   path: "/handoff",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2901,7 +2911,7 @@ http.route({
 /**
  * POST /requestApproval — Ask Max for decision
  */
-http.route({
+cors.route({
   path: "/requestApproval",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2952,7 +2962,7 @@ http.route({
  * POST /v2/learn — Submit session learning (agents call this when ending session)
  * Body: { agent, taskId?, taskTitle, summary, files, challenges?, patterns?, tags }
  */
-http.route({
+cors.route({
   path: "/v2/learn",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -2987,7 +2997,7 @@ http.route({
 /**
  * GET /v2/learnings — Get recent learnings (for agents to learn from others)
  */
-http.route({
+cors.route({
   path: "/v2/learnings",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3016,7 +3026,7 @@ http.route({
  * GET /api/performance/agent?agent=sam&startDate=2026-02-04&endDate=2026-02-04
  * Get performance metrics for a specific agent
  */
-http.route({
+cors.route({
   path: "/api/performance/agent",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3059,7 +3069,7 @@ http.route({
  * GET /api/performance/dashboard?date=2026-02-04
  * Get aggregated metrics for all agents (dashboard overview)
  */
-http.route({
+cors.route({
   path: "/api/performance/dashboard",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3089,7 +3099,7 @@ http.route({
  * GET /api/performance/latest?agent=sam
  * Get latest real-time metrics for an agent
  */
-http.route({
+cors.route({
   path: "/api/performance/latest",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3126,7 +3136,7 @@ http.route({
  * GET /api/performance/velocity?agent=sam&hours=24
  * Get velocity trend (tasks per hour) over time
  */
-http.route({
+cors.route({
   path: "/api/performance/velocity",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3165,7 +3175,7 @@ http.route({
  * GET /api/performance/costs?date=2026-02-04
  * Get cost breakdown by agent
  */
-http.route({
+cors.route({
   path: "/api/performance/costs",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3201,7 +3211,7 @@ http.route({
  * Subscribe to events for a specific agent.
  * Returns pending events that have not been delivered yet.
  */
-http.route({
+cors.route({
   path: "/api/events/subscribe",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3241,7 +3251,7 @@ http.route({
  * Acknowledge receipt of an event.
  * Body: { eventId: "..." }
  */
-http.route({
+cors.route({
   path: "/api/events/ack",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -3279,7 +3289,7 @@ http.route({
  * Manually publish an event to an agent.
  * Body: { type: "...", targetAgent: "...", payload: {...} }
  */
-http.route({
+cors.route({
   path: "/api/events/publish",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -3321,7 +3331,7 @@ http.route({
 /**
  * POST /v2/sessionState — Update session state for agent on device
  */
-http.route({
+cors.route({
   path: "/v2/sessionState",
   method: "POST",
   handler: withAuth(async (ctx, request) => {
@@ -3363,7 +3373,7 @@ http.route({
 /**
  * GET /v2/syncOverview — Get sync overview of all devices and agents
  */
-http.route({
+cors.route({
   path: "/v2/syncOverview",
   method: "GET",
   handler: withAuth(async (ctx) => {
@@ -3387,7 +3397,7 @@ http.route({
 /**
  * GET /v2/deviceSessions?device=mac-mini — Get sessions for specific device
  */
-http.route({
+cors.route({
   path: "/v2/deviceSessions",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3421,7 +3431,7 @@ http.route({
 /**
  * GET /v2/agentSessions?agent=max — Get sessions for specific agent across devices
  */
-http.route({
+cors.route({
   path: "/v2/agentSessions",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3459,7 +3469,7 @@ http.route({
 /**
  * GET /loop/compliance?agent=sam&days=7 — Agent loop compliance stats
  */
-http.route({
+cors.route({
   path: "/loop/compliance",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3490,7 +3500,7 @@ http.route({
 /**
  * GET /loop/breaches?limit=20 — List current SLA breaches
  */
-http.route({
+cors.route({
   path: "/loop/breaches",
   method: "GET",
   handler: withAuth(async (ctx, request) => {
@@ -3522,7 +3532,7 @@ http.route({
  * POST /loop/escalate — Manually escalate a stuck message
  * Body: { messageId: string, reason: string, escalateTo?: "max" | "ceo" }
  */
-http.route({
+cors.route({
   path: "/loop/escalate",
   method: "POST",
   handler: withAuth(async (ctx, request) => {

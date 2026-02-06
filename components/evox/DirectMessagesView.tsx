@@ -61,7 +61,7 @@ export function DirectMessagesView({
   if (!agents) {
     return (
       <div className={cn("flex items-center justify-center h-full", className)}>
-        <span className="animate-pulse text-sm text-primary0">Loading...</span>
+        <span className="animate-pulse text-sm text-secondary">Loading...</span>
       </div>
     );
   }
@@ -91,7 +91,7 @@ export function DirectMessagesView({
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <span className="text-4xl mb-3 block">💬</span>
-              <p className="text-sm text-primary0">Select an agent to start a conversation</p>
+              <p className="text-sm text-secondary">Select an agent to start a conversation</p>
               <p className="text-xs text-tertiary mt-1">Press Esc to close</p>
             </div>
           </div>

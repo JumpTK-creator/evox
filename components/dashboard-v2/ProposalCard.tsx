@@ -50,7 +50,7 @@ const statusStyles: Record<string, string> = {
   open: "bg-blue-900/40 text-blue-400",
   resolved: "bg-green-900/40 text-green-400",
   escalated: "bg-yellow-900/40 text-yellow-400",
-  closed: "bg-surface-4 text-primary0",
+  closed: "bg-surface-4 text-secondary",
 };
 
 function formatTime(timestamp: number): string {
@@ -155,7 +155,7 @@ export function ProposalCard({ proposal, expanded = false, onToggle }: ProposalC
         <div className="px-3 pb-3 pt-1 border-t border-border-default/50 space-y-2">
           {/* Context */}
           {proposal.context && (
-            <p className="text-[11px] text-primary0 leading-relaxed">
+            <p className="text-[11px] text-secondary leading-relaxed">
               {proposal.context}
             </p>
           )}
@@ -201,7 +201,7 @@ export function ProposalCard({ proposal, expanded = false, onToggle }: ProposalC
 
                 {/* Vote count + voters */}
                 <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-[10px] text-primary0">
+                  <span className="text-[10px] text-secondary">
                     {voteCount} {voteCount === 1 ? "vote" : "votes"}
                     {totalVotes > 0 && ` (${pct}%)`}
                   </span>

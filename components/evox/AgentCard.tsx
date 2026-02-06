@@ -73,7 +73,7 @@ export function AgentCard({
               </span>
             </div>
             {role && (
-              <span className="text-[10px] sm:text-xs text-primary0 uppercase">
+              <span className="text-[10px] sm:text-xs text-secondary uppercase">
                 {role}
               </span>
             )}
@@ -106,7 +106,7 @@ export function AgentCard({
       {/* Last Message Preview */}
       {lastMessage && (
         <div className="mt-2 pt-2 border-t border-border-default">
-          <p className="text-[10px] sm:text-xs text-primary0 line-clamp-1">
+          <p className="text-[10px] sm:text-xs text-secondary line-clamp-1">
             &ldquo;{lastMessage}&rdquo;
           </p>
         </div>

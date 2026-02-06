@@ -55,7 +55,7 @@ export function DailyNoteCard({ date, content, updatedAt, className }: DailyNote
               {formatDistanceToNow(updatedAt, { addSuffix: true })}
             </span>
           )}
-          <span className="text-xs text-primary0">{expanded ? "▲" : "▼"}</span>
+          <span className="text-xs text-secondary">{expanded ? "▲" : "▼"}</span>
         </div>
       </button>
 
@@ -64,13 +64,13 @@ export function DailyNoteCard({ date, content, updatedAt, className }: DailyNote
         {expanded ? (
           <div className="whitespace-pre-wrap text-sm text-secondary">{content}</div>
         ) : (
-          <div className="text-sm text-primary0">
+          <div className="text-sm text-secondary">
             {previewLines.map((line, i) => (
               <div key={i} className="truncate">
                 {line}
               </div>
             ))}
-            {hasMore && <span className="text-primary0">...</span>}
+            {hasMore && <span className="text-secondary">...</span>}
           </div>
         )}
       </div>

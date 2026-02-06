@@ -54,7 +54,7 @@ export function VelocityWidget({
           <span className={`text-lg font-bold ${trendStyle.color}`}>
             {trendStyle.icon}
           </span>
-          <span className="text-xs text-primary0">
+          <span className="text-xs text-secondary">
             {trend === "up" ? "Improving" : trend === "down" ? "Slowing" : "Steady"}
           </span>
         </div>
@@ -64,24 +64,24 @@ export function VelocityWidget({
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-white">{tasksToday}</div>
-          <div className="text-[10px] text-primary0 uppercase">Today</div>
+          <div className="text-[10px] text-secondary uppercase">Today</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-primary">{tasksWeek}</div>
-          <div className="text-[10px] text-primary0 uppercase">This Week</div>
+          <div className="text-[10px] text-secondary uppercase">This Week</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-400">
             {tasksPerHour.toFixed(1)}
           </div>
-          <div className="text-[10px] text-primary0 uppercase">Tasks/hr</div>
+          <div className="text-[10px] text-secondary uppercase">Tasks/hr</div>
         </div>
       </div>
 
       {/* Per-agent breakdown */}
       {agentVelocities.length > 0 && (
         <div className="border-t border-border-default pt-3">
-          <div className="text-[10px] text-primary0 uppercase mb-2">By Agent</div>
+          <div className="text-[10px] text-secondary uppercase mb-2">By Agent</div>
           <div className="space-y-1.5">
             {agentVelocities.slice(0, 4).map((agent) => (
               <div key={agent.name} className="flex items-center justify-between">

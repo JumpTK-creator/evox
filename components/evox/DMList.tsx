@@ -46,7 +46,7 @@ export function DMList({
   return (
     <div className={cn("space-y-1", className)}>
       <div className="flex items-center justify-between px-2 py-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary0">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-secondary">
           Direct Messages
         </span>
       </div>

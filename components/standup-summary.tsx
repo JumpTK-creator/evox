@@ -23,17 +23,17 @@ export function StandupSummary({
           <Clock className="h-5 w-5 text-yellow-500" />
           <div>
             <p className="text-2xl font-bold text-primary">{wipCount}</p>
-            <p className="text-xs text-primary0">In Progress</p>
+            <p className="text-xs text-secondary">In Progress</p>
           </div>
         </div>
       </div>
 
       <div className="rounded-lg border border-border-default bg-surface-1/50 p-4">
         <div className="flex items-center gap-3">
-          <Inbox className="h-5 w-5 text-primary0" />
+          <Inbox className="h-5 w-5 text-secondary" />
           <div>
             <p className="text-2xl font-bold text-primary">{backlogCount}</p>
-            <p className="text-xs text-primary0">Backlog</p>
+            <p className="text-xs text-secondary">Backlog</p>
           </div>
         </div>
       </div>
@@ -43,7 +43,7 @@ export function StandupSummary({
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <div>
             <p className="text-2xl font-bold text-primary">{doneCount}</p>
-            <p className="text-xs text-primary0">Completed</p>
+            <p className="text-xs text-secondary">Completed</p>
           </div>
         </div>
       </div>
@@ -54,7 +54,7 @@ export function StandupSummary({
             <div className="h-5 w-5 rounded-full bg-red-500" />
             <div>
               <p className="text-2xl font-bold text-primary">{blockedCount}</p>
-              <p className="text-xs text-primary0">Blocked</p>
+              <p className="text-xs text-secondary">Blocked</p>
             </div>
           </div>
         </div>

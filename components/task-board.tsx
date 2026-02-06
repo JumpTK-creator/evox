@@ -186,7 +186,7 @@ export function TaskBoard({ tasks, agents }: TaskBoardProps) {
               </h3>
               <Badge
                 variant="outline"
-                className="text-xs border-gray-500 bg-surface-4/50 text-primary0"
+                className="text-xs border-gray-500 bg-surface-4/50 text-secondary"
               >
                 {columnTasks.length}
               </Badge>

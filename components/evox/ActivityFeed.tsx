@@ -216,7 +216,7 @@ export function ActivityFeed({ limit = 20, className }: ActivityFeedProps) {
 
   if (feed.length === 0) {
     return (
-      <div className={cn("py-8 text-center text-sm text-primary0", className)}>
+      <div className={cn("py-8 text-center text-sm text-secondary", className)}>
         <span className="text-2xl mb-2 block">!</span>
         No recent activity
       </div>
@@ -256,7 +256,7 @@ export function ActivityFeed({ limit = 20, className }: ActivityFeedProps) {
 
           {/* Meta (files/lines for commits) */}
           {item.meta && (
-            <span className="shrink-0 text-[10px] font-mono text-primary0">
+            <span className="shrink-0 text-[10px] font-mono text-secondary">
               {item.meta}
             </span>
           )}

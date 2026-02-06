@@ -64,7 +64,7 @@ export function MarkdownEditor({
       {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-border-default px-3 py-2 bg-base">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-primary0">Editing</span>
+          <span className="text-xs text-secondary">Editing</span>
           {lastSaved && (
             <span className="text-xs text-tertiary">
               Draft saved {lastSaved.toLocaleTimeString()}

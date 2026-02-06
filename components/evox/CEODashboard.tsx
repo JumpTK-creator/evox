@@ -156,7 +156,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
                 ? "bg-green-500 animate-pulse shadow-[0_0_6px_rgba(34,197,94,0.4)]"
                 : "bg-red-500"
             )} />
-            <span className="text-xs text-primary0">Live</span>
+            <span className="text-xs text-secondary">Live</span>
           </div>
         </div>
       </header>
@@ -166,7 +166,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {/* Velocity */}
           <div className="bg-surface-1 border border-border-default rounded-xl p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
               Velocity
             </div>
             <div className="text-2xl font-bold tabular-nums text-white">
@@ -191,7 +191,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
 
           {/* Commits */}
           <div className="bg-surface-1 border border-border-default rounded-xl p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
               Commits
             </div>
             <div className="text-2xl font-bold tabular-nums text-emerald-400">
@@ -202,7 +202,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
 
           {/* Team */}
           <div className="bg-surface-1 border border-border-default rounded-xl p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
               Team
             </div>
             <div className="text-2xl font-bold tabular-nums text-white">
@@ -213,7 +213,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
 
           {/* Period Summary */}
           <div className="bg-surface-1 border border-border-default rounded-xl p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
               {TIME_RANGE_LABEL[timeRange]}
             </div>
             {isLoading ? (
@@ -229,7 +229,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
 
           {/* Success Rate (merged from Health) */}
           <div className="bg-surface-1 border border-border-default rounded-xl p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
               Success Rate
             </div>
             <div className={cn(
@@ -267,7 +267,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
 
           {/* Errors (merged from Health) */}
           <div className="bg-surface-1 border border-border-default rounded-xl p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-1">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
               Errors
             </div>
             <div className={cn(
@@ -322,7 +322,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
           {/* Live Activity */}
           <div className="bg-surface-1 border border-border-default rounded-xl overflow-hidden">
             <div className="px-4 py-2.5 border-b border-border-default">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
                 Live Activity
               </span>
             </div>
@@ -355,7 +355,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
           {/* Recent Commits */}
           <div className="bg-surface-1 border border-border-default rounded-xl overflow-hidden">
             <div className="px-4 py-2.5 border-b border-border-default">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
                 Recent Commits
               </span>
             </div>
@@ -386,7 +386,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
         {/* ─── Agent Comms ─── */}
         <div className="bg-surface-1 border border-border-default rounded-xl overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border-default">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-primary0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
               Agent Comms
             </span>
           </div>
@@ -407,7 +407,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
                       {msg.timestamp ? timeAgo(msg.timestamp) : ""}
                     </span>
                   </div>
-                  <div className="text-xs text-primary0 truncate">
+                  <div className="text-xs text-secondary truncate">
                     {msg.content?.slice(0, 80) || msg.summary || ""}
                   </div>
                   {msg.keywords && msg.keywords.length > 0 && (
@@ -423,7 +423,7 @@ export function CEODashboard({ className, onAgentClick, timeRange: externalTimeR
                               ? "bg-emerald-500/20 text-emerald-400"
                               : /blocked|failed/i.test(kw)
                               ? "bg-red-500/20 text-red-400"
-                              : "bg-surface-4 text-primary0"
+                              : "bg-surface-4 text-secondary"
                           )}
                         >
                           {kw}

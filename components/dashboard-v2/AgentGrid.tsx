@@ -102,7 +102,7 @@ export function AgentGrid({ agents }: AgentGridProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-medium text-secondary">Team Status</h2>
-        <span className="text-xs text-primary0 bg-surface-1 px-2 py-1 rounded">
+        <span className="text-xs text-secondary bg-surface-1 px-2 py-1 rounded">
           {onlineCount}/{agents.length} online
         </span>
       </div>
@@ -157,7 +157,7 @@ export function AgentGrid({ agents }: AgentGridProps) {
               <span
                 className={`text-[10px] shrink-0 hidden sm:inline ${
                   successRate >= 90
-                    ? "text-primary0"
+                    ? "text-secondary"
                     : successRate >= 70
                       ? "text-yellow-500"
                       : "text-red-400"

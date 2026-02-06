@@ -29,7 +29,7 @@ export function Loading({ size = "md", text, className }: LoadingProps) {
         aria-label="Loading"
       />
       {text && (
-        <span className="text-xs sm:text-sm text-primary0 animate-pulse">
+        <span className="text-xs sm:text-sm text-secondary animate-pulse">
           {text}
         </span>
       )}

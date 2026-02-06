@@ -73,7 +73,7 @@ export function ActivityFeed({ activities, limit = 10 }: ActivityFeedProps) {
 
   if (displayActivities.length === 0) {
     return (
-      <div className="py-8 text-center text-sm text-primary0">
+      <div className="py-8 text-center text-sm text-secondary">
         No recent activity
       </div>
     );

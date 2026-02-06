@@ -103,7 +103,7 @@ export function UnresolvedAlerts({ className, limit = 10 }: UnresolvedAlertsProp
                 </div>
 
                 {/* Row 3: Status + broken reason */}
-                <div className="flex items-center gap-2 mt-1 text-[10px] text-primary0">
+                <div className="flex items-center gap-2 mt-1 text-[10px] text-secondary">
                   <span>Status: {alert.messageStatusLabel}</span>
                   {alert.loopBroken && alert.loopBrokenReason && (
                     <span className="text-red-400 truncate">

@@ -48,7 +48,7 @@ export function DispatchList({ dispatches, limit = 5 }: DispatchListProps) {
 
   if (displayDispatches.length === 0) {
     return (
-      <div className="py-6 text-center text-sm text-primary0">
+      <div className="py-6 text-center text-sm text-secondary">
         No dispatches in queue
       </div>
     );

@@ -53,7 +53,7 @@ export function AccountabilityGrid({ className }: AccountabilityGridProps) {
   if (agents.length === 0) {
     return (
       <div className={className}>
-        <h2 className="text-xs font-bold uppercase tracking-wider text-primary0 mb-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-secondary mb-2">
           Accountability
         </h2>
         <div className="text-center py-4 text-tertiary text-sm">
@@ -65,7 +65,7 @@ export function AccountabilityGrid({ className }: AccountabilityGridProps) {
 
   return (
     <div className={className}>
-      <h2 className="text-xs font-bold uppercase tracking-wider text-primary0 mb-2">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-secondary mb-2">
         Accountability
       </h2>
       <div className="space-y-2">
@@ -102,7 +102,7 @@ export function AccountabilityGrid({ className }: AccountabilityGridProps) {
                   {agent.slaBreaches} SLA
                 </span>
               )}
-              <span className="ml-auto text-primary0">
+              <span className="ml-auto text-secondary">
                 reply {formatMs(agent.avgReplyTimeMs)} / act {formatMs(agent.avgActionTimeMs)}
               </span>
             </div>

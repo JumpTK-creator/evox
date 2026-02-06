@@ -19,7 +19,7 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-primary0 hover:bg-surface-4 hover:text-primary"
+          className="rounded p-1 text-secondary hover:bg-surface-4 hover:text-primary"
           aria-label="Close"
         >
           ×
@@ -27,7 +27,7 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
       </div>
       <div className="space-y-4 shrink-0">
         <div>
-          <h4 className="text-xs font-semibold uppercase text-primary0">Title</h4>
+          <h4 className="text-xs font-semibold uppercase text-secondary">Title</h4>
           <p className="mt-1 text-sm text-primary">{task.title}</p>
           {task.linearIdentifier && (
             <a href={task.linearUrl ?? "#"} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-secondary hover:text-secondary">
@@ -36,11 +36,11 @@ export function TaskDetail({ task, onClose }: TaskDetailProps) {
           )}
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase text-primary0">Assignee</h4>
+          <h4 className="text-xs font-semibold uppercase text-secondary">Assignee</h4>
           <p className="mt-1 text-sm text-secondary">{task.assigneeName ?? "—"}</p>
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase text-primary0">Quick actions</h4>
+          <h4 className="text-xs font-semibold uppercase text-secondary">Quick actions</h4>
           <div className="mt-2 flex gap-2">
             <a
               href={task.linearUrl ?? "#"}

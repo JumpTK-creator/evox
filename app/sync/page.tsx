@@ -56,7 +56,7 @@ export default function SyncDashboard() {
         </div>
 
         {/* Timestamp */}
-        <div className="mt-8 text-center text-sm text-primary0">
+        <div className="mt-8 text-center text-sm text-secondary">
           Last updated: {new Date(timestamp).toLocaleString()}
         </div>
       </div>
@@ -171,7 +171,7 @@ function AgentRow({
       </div>
 
       {/* Status */}
-      <div className="text-sm text-primary0 capitalize">{agent.status}</div>
+      <div className="text-sm text-secondary capitalize">{agent.status}</div>
     </div>
   );
 }

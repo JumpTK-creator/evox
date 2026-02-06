@@ -115,7 +115,7 @@ export function LoopTimeline({ message, className }: LoopTimelineProps) {
   return (
     <div className={cn("bg-surface-1/40 border border-border-default/60 rounded-xl overflow-hidden", className)}>
       <div className="px-4 py-2.5 border-b border-border-default/40 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-primary0">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
           Loop Timeline
         </span>
         <span className="text-[10px] text-tertiary truncate ml-2">
@@ -136,7 +136,7 @@ export function LoopTimeline({ message, className }: LoopTimelineProps) {
                   <span
                     className={cn(
                       "text-[9px] tabular-nums",
-                      t.state === "breached" ? "text-red-400" : "text-primary0"
+                      t.state === "breached" ? "text-red-400" : "text-secondary"
                     )}
                   >
                     {formatDuration(t.duration)}

@@ -53,7 +53,7 @@ export function LiveFeed({ limit = 8, className }: LiveFeedProps) {
   if (feed.length === 0) {
     return (
       <div className={className}>
-        <div className="text-center py-6 text-primary0 text-sm">
+        <div className="text-center py-6 text-secondary text-sm">
           No recent activity
         </div>
       </div>
@@ -105,7 +105,7 @@ export function LiveFeed({ limit = 8, className }: LiveFeedProps) {
 
                 {/* Meta info (files, lines) - only for commits */}
                 {item.meta && (
-                  <div className="text-[10px] text-primary0 mt-0.5 font-mono">
+                  <div className="text-[10px] text-secondary mt-0.5 font-mono">
                     {item.meta}
                   </div>
                 )}

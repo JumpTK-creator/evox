@@ -95,28 +95,28 @@ export function SystemHealthWidget({
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-green-400">{onlineCount}</div>
-          <div className="text-[10px] text-primary0 uppercase">Online</div>
+          <div className="text-[10px] text-secondary uppercase">Online</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-yellow-400">{busyCount}</div>
-          <div className="text-[10px] text-primary0 uppercase">Busy</div>
+          <div className="text-[10px] text-secondary uppercase">Busy</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-red-400">{offlineCount}</div>
-          <div className="text-[10px] text-primary0 uppercase">Offline</div>
+          <div className="text-[10px] text-secondary uppercase">Offline</div>
         </div>
       </div>
 
       {/* Uptime and last incident */}
       <div className="flex items-center justify-between text-xs border-t border-border-default pt-3">
         <div>
-          <span className="text-primary0">Uptime: </span>
+          <span className="text-secondary">Uptime: </span>
           <span className={uptime >= 99 ? "text-green-400" : uptime >= 95 ? "text-yellow-400" : "text-red-400"}>
             {uptime.toFixed(1)}%
           </span>
         </div>
         <div>
-          <span className="text-primary0">Last incident: </span>
+          <span className="text-secondary">Last incident: </span>
           <span className="text-primary">{formatLastIncident(lastIncident)}</span>
         </div>
       </div>

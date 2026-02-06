@@ -60,7 +60,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
   const list = safe.slice(0, 20);
 
   if (list.length === 0) {
-    return <p className="text-sm text-primary0">No recent activity</p>;
+    return <p className="text-sm text-secondary">No recent activity</p>;
   }
 
   return (

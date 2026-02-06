@@ -50,20 +50,20 @@ export function TopBar({
         <span className="text-xs font-semibold uppercase tracking-wider text-secondary">Command Center</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded border border-border-default bg-surface-1 px-2 py-1 text-xs text-primary0">
+        <span className="inline-flex items-center gap-1.5 rounded border border-border-default bg-surface-1 px-2 py-1 text-xs text-secondary">
           In Progress <span className="font-medium text-primary">{inProgress}</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded border border-border-default bg-surface-1 px-2 py-1 text-xs text-primary0">
+        <span className="inline-flex items-center gap-1.5 rounded border border-border-default bg-surface-1 px-2 py-1 text-xs text-secondary">
           Done <span className="font-medium text-primary">{doneToday}</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded border border-border-default bg-surface-1 px-2 py-1 text-xs text-primary0">
+        <span className="inline-flex items-center gap-1.5 rounded border border-border-default bg-surface-1 px-2 py-1 text-xs text-secondary">
           Total <span className="font-medium text-primary">{totalTasks}</span>
         </span>
       </div>
       <div className="flex items-center gap-4">
         <div className="text-right text-xs">
           <div className="font-mono text-primary">{time}</div>
-          <div className="text-primary0">{date}</div>
+          <div className="text-secondary">{date}</div>
         </div>
         {isViewerMode && (
           <span className="rounded-md border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[10px] font-medium text-blue-400">
@@ -82,7 +82,7 @@ export function TopBar({
           <button
             type="button"
             onClick={onSettingsClick}
-            className="rounded-lg p-2 text-primary0 hover:bg-surface-1 hover:text-primary"
+            className="rounded-lg p-2 text-secondary hover:bg-surface-1 hover:text-primary"
             aria-label="Settings"
           >
             <Settings className="h-5 w-5" />

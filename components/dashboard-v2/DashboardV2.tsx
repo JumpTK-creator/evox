@@ -27,7 +27,7 @@ export function DashboardV2() {
   if (!status) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="animate-pulse text-primary0">Loading...</div>
+        <div className="animate-pulse text-secondary">Loading...</div>
       </div>
     );
   }

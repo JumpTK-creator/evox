@@ -57,7 +57,7 @@ export function TaskDetail({
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-start gap-3">
-            <span className="text-sm text-primary0">{id.toUpperCase()}</span>
+            <span className="text-sm text-secondary">{id.toUpperCase()}</span>
           </div>
 
           <h1 className="text-3xl font-bold text-primary">{title}</h1>
@@ -114,10 +114,10 @@ export function TaskDetail({
         {/* Timestamps */}
         <div className="flex gap-6 border-t border-border-default pt-4 text-xs text-tertiary">
           <div>
-            <span>Created:</span> <span className="text-primary0">{formatDate(createdAt)}</span>
+            <span>Created:</span> <span className="text-secondary">{formatDate(createdAt)}</span>
           </div>
           <div>
-            <span>Updated:</span> <span className="text-primary0">{formatDate(updatedAt)}</span>
+            <span>Updated:</span> <span className="text-secondary">{formatDate(updatedAt)}</span>
           </div>
         </div>
       </div>

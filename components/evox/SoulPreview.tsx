@@ -26,14 +26,14 @@ export function SoulPreview({ content, className, linearDocUrl }: SoulPreviewPro
       <div className="flex items-center justify-between border-b border-border-default px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-base">🧬</span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary0">SOUL</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-secondary">SOUL</span>
         </div>
         {linearDocUrl && (
           <a
             href={linearDocUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-primary0 hover:text-secondary"
+            className="text-xs text-secondary hover:text-secondary"
           >
             Edit in Linear ↗
           </a>
@@ -45,7 +45,7 @@ export function SoulPreview({ content, className, linearDocUrl }: SoulPreviewPro
         <div className="whitespace-pre-wrap text-sm text-secondary">
           {expanded ? content : previewLines}
           {!expanded && hasMore && (
-            <span className="text-primary0">...</span>
+            <span className="text-secondary">...</span>
           )}
         </div>
 
@@ -53,7 +53,7 @@ export function SoulPreview({ content, className, linearDocUrl }: SoulPreviewPro
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="mt-2 text-xs text-primary0 hover:text-secondary"
+            className="mt-2 text-xs text-secondary hover:text-secondary"
           >
             {expanded ? "Show less" : `Show more (${lines.length - 3} more lines)`}
           </button>

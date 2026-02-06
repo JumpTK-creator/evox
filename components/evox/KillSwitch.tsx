@@ -86,7 +86,7 @@ export function KillSwitch({ className }: KillSwitchProps) {
             <p className="mt-3 text-sm text-secondary">
               This will immediately:
             </p>
-            <ul className="mt-2 space-y-1 text-sm text-primary0">
+            <ul className="mt-2 space-y-1 text-sm text-secondary">
               <li>Set all agents to offline</li>
               <li>Cancel all pending dispatches</li>
               <li>Pause all automation</li>

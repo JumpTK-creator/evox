@@ -61,7 +61,7 @@ export function AgentDetailSlidePanel({
             <button
               type="button"
               onClick={onClose}
-              className="rounded p-1.5 text-primary0 transition-colors hover:bg-surface-4 hover:text-primary"
+              className="rounded p-1.5 text-secondary transition-colors hover:bg-surface-4 hover:text-primary"
               aria-label="Close panel"
             >
               ✕

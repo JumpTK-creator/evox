@@ -83,7 +83,7 @@ export function HallOfFame({ className, onAgentClick }: HallOfFameProps) {
                     agent.rank === 1 && "sm:order-first"
                   )}
                 >
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-primary0 mb-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-secondary mb-2">
                     {style.label}
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-1">
@@ -92,7 +92,7 @@ export function HallOfFame({ className, onAgentClick }: HallOfFameProps) {
                       {agent.name}
                     </span>
                   </div>
-                  <div className="text-[10px] text-primary0 uppercase mb-3">{agent.role}</div>
+                  <div className="text-[10px] text-secondary uppercase mb-3">{agent.role}</div>
                   <div className="text-lg font-bold tabular-nums text-primary">
                     {Math.round(agent.compositeScore * 100)}
                   </div>
@@ -120,7 +120,7 @@ export function HallOfFame({ className, onAgentClick }: HallOfFameProps) {
             </span>
             {categoryWinners.map((cat) => (
               <div key={cat.label} className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[10px] text-primary0">{cat.label}:</span>
+                <span className="text-[10px] text-secondary">{cat.label}:</span>
                 <button
                   onClick={() => onAgentClick?.(cat.agent!)}
                   className={cn("text-xs font-bold uppercase hover:underline", AGENT_COLORS[cat.agent!.toLowerCase()] ?? "text-primary")}
@@ -135,7 +135,7 @@ export function HallOfFame({ className, onAgentClick }: HallOfFameProps) {
         {/* Leaderboard Table */}
         <div className="bg-surface-1 border border-border-default rounded-xl overflow-hidden">
           <div className="px-4 py-2.5 border-b border-border-default">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-primary0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
               Leaderboard
             </span>
           </div>
@@ -155,7 +155,7 @@ export function HallOfFame({ className, onAgentClick }: HallOfFameProps) {
               <tbody className="divide-y divide-border-default">
                 {leaderboard.map((agent) => (
                   <tr key={agent.name} className="hover:bg-surface-2 transition-colors">
-                    <td className="px-4 py-2.5 tabular-nums text-primary0">{agent.rank}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-secondary">{agent.rank}</td>
                     <td className="px-3 py-2.5">
                       <button
                         onClick={() => onAgentClick?.(agent.name)}

@@ -70,7 +70,7 @@ export function TaskActivitySidebar({
             "flex-1 px-4 py-3 text-sm font-medium transition-colors",
             activeTab === "activity"
               ? "border-b-2 border-blue-500 text-primary"
-              : "text-primary0 hover:text-primary"
+              : "text-secondary hover:text-primary"
           )}
         >
           Activity
@@ -81,7 +81,7 @@ export function TaskActivitySidebar({
             "flex-1 px-4 py-3 text-sm font-medium transition-colors",
             activeTab === "comments"
               ? "border-b-2 border-blue-500 text-primary"
-              : "text-primary0 hover:text-primary"
+              : "text-secondary hover:text-primary"
           )}
         >
           Comments

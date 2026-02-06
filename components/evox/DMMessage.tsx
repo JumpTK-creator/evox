@@ -82,7 +82,7 @@ export function DMMessage({
         <span
           className={cn(
             "block text-[10px] mt-1",
-            isOwn ? "text-blue-200" : "text-primary0"
+            isOwn ? "text-blue-200" : "text-secondary"
           )}
         >
           {formatDistanceToNow(timestamp, { addSuffix: true })}

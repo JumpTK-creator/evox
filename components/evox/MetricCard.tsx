@@ -27,7 +27,7 @@ const colorMap: Record<MetricColor, string> = {
 const trendColors = {
   up: "text-emerald-400",
   down: "text-red-400",
-  flat: "text-primary0",
+  flat: "text-secondary",
 };
 
 const trendIcons = {

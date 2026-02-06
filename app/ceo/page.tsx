@@ -87,7 +87,7 @@ export default function CEODashboardPage() {
                     <span className="text-emerald-400 font-bold">
                       {todayMetrics?.completed}
                     </span>
-                    <span className="text-primary0">done</span>
+                    <span className="text-secondary">done</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-blue-400 font-bold">
@@ -143,7 +143,7 @@ export default function CEODashboardPage() {
 
         {/* Live Feed - What's happening */}
         <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-primary0 mb-2 flex items-center gap-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-secondary mb-2 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             Live
           </h2>
@@ -158,7 +158,7 @@ export default function CEODashboardPage() {
             onClick={() => setShowTerminals(!showTerminals)}
             className="w-full flex items-center justify-between py-2 text-sm"
           >
-            <span className="text-primary0 uppercase tracking-wider text-xs font-bold">
+            <span className="text-secondary uppercase tracking-wider text-xs font-bold">
               Terminals
             </span>
             <span className="text-tertiary">{showTerminals ? "-" : "+"}</span>

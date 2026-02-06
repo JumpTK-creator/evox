@@ -18,7 +18,7 @@ export function StandupTaskItem({ id, title, identifier, className }: StandupTas
       )}
     >
       <div className="flex items-start gap-2">
-        <span className="flex-shrink-0 font-mono text-xs text-primary0">{identifier}</span>
+        <span className="flex-shrink-0 font-mono text-xs text-secondary">{identifier}</span>
         <span className="text-primary">{title}</span>
       </div>
     </Link>

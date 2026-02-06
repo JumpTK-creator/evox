@@ -67,7 +67,7 @@ export function StandupAgentCard({
 
       {/* Backlog (status backlog or todo) */}
       <div className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-primary0">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-secondary">
           Backlog ({backlog.length})
         </h4>
         {backlog.length > 0 ? (

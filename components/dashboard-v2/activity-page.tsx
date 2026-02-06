@@ -95,7 +95,7 @@ export function ActivityPage() {
       {/* Activity list - Linear style */}
       <div className="flex-1 overflow-y-auto">
         {filteredEvents.length === 0 ? (
-          <div className="py-8 text-center text-xs text-primary0">
+          <div className="py-8 text-center text-xs text-secondary">
             No activity found
           </div>
         ) : (
@@ -157,7 +157,7 @@ export function ActivityPage() {
                   <span className="flex-1" />
 
                   {/* Timestamp */}
-                  <span className="shrink-0 text-[10px] text-primary0">
+                  <span className="shrink-0 text-[10px] text-secondary">
                     {formatDistanceToNow(event.timestamp ?? new Date().getTime(), { addSuffix: false })}
                   </span>
                 </div>

@@ -65,7 +65,7 @@ export function ScratchPad({ isOpen, onToggle }: ScratchPadProps) {
         value={content}
         onChange={(e) => handleChange(e.target.value)}
         placeholder="Quick notes..."
-        className="h-32 w-full resize-none bg-transparent px-3 py-2 text-sm text-primary placeholder:text-primary0 focus:outline-none"
+        className="h-32 w-full resize-none bg-transparent px-3 py-2 text-sm text-primary placeholder:text-secondary focus:outline-none"
       />
     </div>
   );

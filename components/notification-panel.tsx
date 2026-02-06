@@ -48,7 +48,7 @@ export function NotificationPanel({
       <div className="max-h-[480px] overflow-y-auto">
         {byAgent.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-sm text-primary0">No notifications</p>
+            <p className="text-sm text-secondary">No notifications</p>
           </div>
         ) : (
           <div className="p-2 space-y-4">

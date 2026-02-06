@@ -27,7 +27,7 @@ export function MetricsBar({
         <div className="text-3xl sm:text-2xl font-bold text-white">
           {tasksToday}
         </div>
-        <div className="text-primary0 text-xs uppercase tracking-wide mt-1">
+        <div className="text-secondary text-xs uppercase tracking-wide mt-1">
           Tasks Today
         </div>
       </div>
@@ -37,7 +37,7 @@ export function MetricsBar({
         <div className="text-3xl sm:text-2xl font-bold text-blue-400">
           {velocity.toFixed(1)}
         </div>
-        <div className="text-primary0 text-xs uppercase tracking-wide mt-1">
+        <div className="text-secondary text-xs uppercase tracking-wide mt-1">
           Tasks/Hour
         </div>
       </div>
@@ -47,7 +47,7 @@ export function MetricsBar({
         <div className="text-3xl sm:text-2xl font-bold text-green-400">
           {activeAgents}/{totalAgents}
         </div>
-        <div className="text-primary0 text-xs uppercase tracking-wide mt-1">
+        <div className="text-secondary text-xs uppercase tracking-wide mt-1">
           Agents Online
         </div>
       </div>
@@ -64,7 +64,7 @@ export function MetricsBar({
           {blockers}
         </div>
         <div className={`text-xs uppercase tracking-wide mt-1 ${
-          blockers > 0 ? "text-red-400/70" : "text-primary0"
+          blockers > 0 ? "text-red-400/70" : "text-secondary"
         }`}>
           Blockers
         </div>
