@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { ActivityPage } from "./activity-page";
 import { FileActivityMatrix } from "@/components/evox/FileActivityMatrix";
-import { ExecutionTerminal } from "@/components/evox/ExecutionTerminal";
 import { HeartbeatPanel } from "@/components/evox/HeartbeatPanel";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +11,7 @@ interface ActivityDrawerProps {
   onClose: () => void;
 }
 
-type DrawerTab = "activity" | "files" | "terminal" | "health";
+type DrawerTab = "activity" | "files" | "health";
 
 /** AGT-181: Activity Drawer — slides from right, triggered by bell icon */
 export function ActivityDrawer({ open, onClose }: ActivityDrawerProps) {
@@ -73,16 +72,6 @@ export function ActivityDrawer({ open, onClose }: ActivityDrawerProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("terminal")}
-                className={cn(
-                  "text-xs font-medium tracking-widest uppercase transition-colors",
-                  activeTab === "terminal" ? "text-white" : "text-white/40 hover:text-white/60"
-                )}
-              >
-                Terminal
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveTab("health")}
                 className={cn(
                   "text-xs font-medium tracking-widest uppercase transition-colors",
@@ -108,11 +97,6 @@ export function ActivityDrawer({ open, onClose }: ActivityDrawerProps) {
             {activeTab === "files" && (
               <div className="h-full p-3 overflow-auto">
                 <FileActivityMatrix className="h-full" />
-              </div>
-            )}
-            {activeTab === "terminal" && (
-              <div className="h-full p-3 overflow-auto">
-                <ExecutionTerminal className="h-full" />
               </div>
             )}
             {activeTab === "health" && (
