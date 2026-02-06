@@ -1,4 +1,24 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npx next build)",
+      "Bash(git status)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git add*)",
+      "Bash(git push)",
+      "Bash(npx convex*)",
+      "Bash(tmux capture-pane*)",
+      "Bash(tmux list-windows*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git checkout .)",
+      "Bash(git clean -f*)"
+    ]
+  },
   "mcpServers": {
     "linear": {
       "type": "url",

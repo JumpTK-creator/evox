@@ -124,6 +124,24 @@ ADR-001 through ADR-006: [docs/decisions/](docs/decisions/)
 2. **Pre-commit** — Grep for secrets before every commit
 3. **Review** [docs/LESSONS.md](docs/LESSONS.md) — Learn from past mistakes
 
+## Self-Improvement Rules
+
+1. **After a mistake** — add a lesson to MEMORY.md `Lessons Learned` section immediately
+2. **If a pattern repeats 3x** — propose a new Architecture Rule in CLAUDE.md
+3. **If a rule is wrong** — fix it in CLAUDE.md, don't silently ignore it
+4. **After every session** — run `/session-end` to capture what was learned
+5. **Before complex work** — run `/plan` to get approval before writing code
+
+## CLAUDE.md Maintenance
+
+- Keep under 200 lines (currently ~145). Move details to docs/ if growing.
+- Update when architecture changes (new rules, removed rules, new patterns)
+- Don't duplicate MEMORY.md content — CLAUDE.md = rules, MEMORY.md = state
+- Review accuracy during `/session-end` — remove stale rules, update counts
+- Any agent can propose edits; CEO (EVOX) approves architecture changes
+
+---
+
 ## Session End Protocol
 
 Run `./scripts/restart-agent.sh <agent>` before restarting. Script captures output, collects lessons, logs session. **No other restart method allowed.**
