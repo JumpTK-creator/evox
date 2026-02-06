@@ -6,6 +6,7 @@ Thư mục này chứa **identity thống nhất** cho mỗi agent. Mỗi agent 
 
 | Agent | Role | File | Status |
 |-------|------|------|--------|
+| EVOX | Chief Operating Officer | [evox.md](./evox.md) | Active |
 | SAM | Backend Engineer | [sam.md](./sam.md) | Active |
 | LEO | Frontend Engineer | [leo.md](./leo.md) | Active |
 | QUINN | QA Engineer | [quinn.md](./quinn.md) | Active |

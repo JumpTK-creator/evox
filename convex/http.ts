@@ -1,7 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api } from "./_generated/api";
-import { Id, Doc } from "./_generated/dataModel";
+import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 
 const http = httpRouter();
@@ -20,7 +20,6 @@ http.route({
   handler: httpAction(async (ctx) => {
     try {
       // Get all agents
-      // @ts-ignore Convex API type inference too deep (TS2589)
       const agents = await ctx.runQuery(api.agents.list);
 
       // Get pending dispatches
@@ -79,27 +78,9 @@ http.route({
 
       if (event === "push") {
         const commits = body.commits || [];
-        const results: Array<{ ticket: string; completed: boolean }> = [];
-        const repo = body.repository?.full_name ?? "unknown/repo";
-        const branch = body.ref?.replace("refs/heads/", "") ?? "unknown";
-        const pushedBy = body.pusher?.name ?? body.sender?.login;
+        const results = [];
 
         for (const commit of commits) {
-          // AGT-80: Log git activity
-          await ctx.runMutation(api.gitActivity.logCommit, {
-            commitHash: commit.id,
-            message: commit.message,
-            authorName: commit.author?.name ?? "unknown",
-            authorUsername: commit.author?.username,
-            authorEmail: commit.author?.email,
-            repo,
-            branch,
-            url: commit.url,
-            pushedBy,
-            commitTimestamp: commit.timestamp ? new Date(commit.timestamp).getTime() : undefined,
-          });
-
-          // Auto-complete task if commit message contains "closes AGT-XXX"
           const match = commit.message.match(/closes?\s+(AGT-\d+)/i);
           if (match) {
             const result = await ctx.runMutation(api.tasks.markCompletedByIdentifier, {
@@ -112,55 +93,7 @@ http.route({
         }
 
         return new Response(
-          JSON.stringify({
-            processed: true,
-            commitsLogged: commits.length,
-            tasksCompleted: results,
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      // AGT-279: Handle pull_request events - dispatch to Quinn for review
-      if (event === "pull_request") {
-        const action = body.action; // opened, synchronize, reopened, closed
-        const pr = body.pull_request;
-
-        // Only dispatch reviews for opened, synchronize (new commits), and reopened
-        if (action === "opened" || action === "synchronize" || action === "reopened") {
-          const dispatchId = await ctx.runMutation(api.dispatches.createPRReviewDispatch, {
-            prNumber: pr.number,
-            prTitle: pr.title,
-            prBody: pr.body || "",
-            prUrl: pr.html_url,
-            repo: body.repository?.full_name ?? "unknown/repo",
-            branch: pr.head?.ref ?? "unknown",
-            baseBranch: pr.base?.ref ?? "main",
-            author: pr.user?.login ?? "unknown",
-            action,
-          });
-
-          return new Response(
-            JSON.stringify({
-              processed: true,
-              event: "pull_request",
-              action,
-              prNumber: pr.number,
-              dispatchedToQuinn: !!dispatchId,
-              dispatchId,
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
-          );
-        }
-
-        // PR closed - no action needed (could log for analytics later)
-        return new Response(
-          JSON.stringify({
-            processed: true,
-            event: "pull_request",
-            action,
-            message: `PR ${action}, no review needed`,
-          }),
+          JSON.stringify({ processed: true, results }),
           { status: 200, headers: { "Content-Type": "application/json" } }
         );
       }
@@ -346,17 +279,17 @@ http.route({
       const skills = await ctx.runQuery(api.skills.getByAgent, { agentId });
 
       // 5. Get task if ticketId provided
-      let task: Doc<"tasks"> | null = null;
+      let task = null;
       if (ticketId) {
         // Find task by linearIdentifier (AGT-XXX format)
         const allTasks = await ctx.runQuery(api.tasks.list, {});
         task = allTasks.find(
-          (t) => t.linearIdentifier?.toLowerCase() === ticketId.toLowerCase()
-        ) ?? null;
+          (t: any) => t.linearIdentifier?.toLowerCase() === ticketId.toLowerCase()
+        );
       }
 
       // 6. Get current task if agent has one assigned
-      let currentTask: Doc<"tasks"> | null = null;
+      let currentTask = null;
       if (agent.currentTask) {
         currentTask = await ctx.runQuery(api.tasks.get, { id: agent.currentTask });
       }
@@ -539,12 +472,12 @@ http.route({
       const memoryContext = await ctx.runQuery(api.agentMemory.getBootContext, { agentId });
       const skills = await ctx.runQuery(api.skills.getByAgent, { agentId });
 
-      let task: Doc<"tasks"> | null = null;
+      let task = null;
       if (ticketId) {
         const allTasks = await ctx.runQuery(api.tasks.list, {});
         task = allTasks.find(
-          (t) => t.linearIdentifier?.toLowerCase() === ticketId.toLowerCase()
-        ) ?? null;
+          (t: any) => t.linearIdentifier?.toLowerCase() === ticketId.toLowerCase()
+        );
       }
 
       // Build text-only response for CLI
@@ -730,147 +663,6 @@ http.route({
   }),
 });
 
-// GET /getAgentStatuses - AGT-273: Get all agents with computed online/offline status
-http.route({
-  path: "/getAgentStatuses",
-  method: "GET",
-  handler: httpAction(async (ctx) => {
-    try {
-      const statuses = await ctx.runQuery(api.agents.getAllAgentStatuses);
-      return new Response(JSON.stringify(statuses), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("Get agent statuses error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// GET /getAgentStatus?name=sam - AGT-273: Get single agent status
-http.route({
-  path: "/getAgentStatus",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const name = url.searchParams.get("name");
-
-      if (!name) {
-        return new Response(
-          JSON.stringify({ error: "name query parameter is required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      const status = await ctx.runQuery(api.agents.getAgentStatus, { name });
-
-      if (!status) {
-        return new Response(
-          JSON.stringify({ error: `Agent '${name}' not found` }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(JSON.stringify(status), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("Get agent status error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// ============================================================
-// AGENT HEALTH MONITORING ENDPOINTS
-// ============================================================
-
-/**
- * GET /agentHealth - Get comprehensive health status for all agents
- * Returns: health scores, metrics, status, issues
- */
-http.route({
-  path: "/agentHealth",
-  method: "GET",
-  handler: httpAction(async (ctx) => {
-    try {
-      const health = await ctx.runQuery(api.agents.getAgentHealth);
-      return new Response(
-        JSON.stringify({
-          success: true,
-          timestamp: Date.now(),
-          agents: health,
-          summary: {
-            total: health.length,
-            healthy: health.filter((h) => h.health.isHealthy).length,
-            unhealthy: health.filter((h) => !h.health.isHealthy).length,
-            avgHealthScore: Math.round(
-              health.reduce((sum, h) => sum + h.health.score, 0) / health.length
-            ),
-          },
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("Get agent health error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /agentHealthByName?name=<agent> - Get health for specific agent
- */
-http.route({
-  path: "/agentHealthByName",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const name = url.searchParams.get("name");
-
-      if (!name) {
-        return new Response(
-          JSON.stringify({ error: "name query parameter is required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      const health = await ctx.runQuery(api.agents.getAgentHealthByName, { name });
-
-      if (!health) {
-        return new Response(
-          JSON.stringify({ error: `Agent '${name}' not found` }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ success: true, ...health }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("Get agent health error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
 // POST /api/linear-sync - Trigger Linear sync
 http.route({
   path: "/api/linear-sync",
@@ -1036,7 +828,7 @@ http.route({
       }
 
       // Find task by linearIdentifier if provided
-      let relatedTaskId: Id<"tasks"> | undefined = undefined;
+      let relatedTaskId = undefined;
       if (taskId) {
         if (taskId.toUpperCase().startsWith("AGT-")) {
           const allTasks = await ctx.runQuery(api.tasks.list, {});
@@ -1047,8 +839,7 @@ http.route({
             relatedTaskId = task._id;
           }
         } else {
-          // Assume taskId is already a valid Convex ID
-          relatedTaskId = taskId as Id<"tasks">;
+          relatedTaskId = taskId;
         }
       }
 
@@ -1805,7 +1596,7 @@ http.route({
 });
 
 /**
- * GET /markDispatchRunning — Mark dispatch as running (daemon calls this via GET)
+ * POST /markDispatchRunning — Mark dispatch as running (daemon calls this)
  * Query param: dispatchId
  */
 http.route({
@@ -1911,119 +1702,6 @@ http.route({
       );
     } catch (error) {
       console.error("markDispatchFailed error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * POST /markDispatchRunning — Mark dispatch as running (agent calls this via POST)
- * Body: { dispatchId: "xxx" }
- */
-http.route({
-  path: "/markDispatchRunning",
-  method: "POST",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const body = await request.json();
-      const { dispatchId } = body;
-
-      if (!dispatchId) {
-        return new Response(
-          JSON.stringify({ error: "dispatchId is required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      await ctx.runMutation(api.dispatches.claim, {
-        dispatchId: dispatchId as Id<"dispatches">,
-      });
-
-      return new Response(
-        JSON.stringify({ success: true, dispatchId }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("markDispatchRunning POST error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * POST /markDispatchCompleted — Mark dispatch as completed (agent calls this via POST)
- * Body: { dispatchId: "xxx", result: "optional summary" }
- */
-http.route({
-  path: "/markDispatchCompleted",
-  method: "POST",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const body = await request.json();
-      const { dispatchId, result } = body;
-
-      if (!dispatchId) {
-        return new Response(
-          JSON.stringify({ error: "dispatchId is required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      await ctx.runMutation(api.dispatches.complete, {
-        dispatchId: dispatchId as Id<"dispatches">,
-        result: result ?? undefined,
-      });
-
-      return new Response(
-        JSON.stringify({ success: true, dispatchId }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("markDispatchCompleted POST error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * POST /markDispatchFailed — Mark dispatch as failed (agent calls this via POST)
- * Body: { dispatchId: "xxx", error: "error message" }
- */
-http.route({
-  path: "/markDispatchFailed",
-  method: "POST",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const body = await request.json();
-      const { dispatchId, error: errorMsg } = body;
-
-      if (!dispatchId) {
-        return new Response(
-          JSON.stringify({ error: "dispatchId is required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      await ctx.runMutation(api.dispatches.fail, {
-        dispatchId: dispatchId as Id<"dispatches">,
-        error: errorMsg ?? "Unknown error",
-      });
-
-      return new Response(
-        JSON.stringify({ success: true, dispatchId }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("markDispatchFailed POST error:", error);
       return new Response(
         JSON.stringify({ error: "Internal server error" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -2934,46 +2612,8 @@ http.route({
 });
 
 /**
- * GET /activity/mobile — Mobile-optimized activity feed
- * Query params: limit (max 30), cursor (timestamp for pagination)
- * Returns minimal payload for <500ms load on mobile
- */
-http.route({
-  path: "/activity/mobile",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "20"), 30);
-      const cursorParam = url.searchParams.get("cursor");
-      const cursor = cursorParam ? parseInt(cursorParam) : undefined;
-
-      const result = await ctx.runQuery(api.activityEvents.listMobile, {
-        limit,
-        cursor,
-      });
-
-      return new Response(JSON.stringify(result), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=10", // 10s cache for mobile
-        },
-      });
-    } catch (error) {
-      console.error("Mobile activity feed error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
  * POST /postToChannel — Post a message to a team channel
  * Body: { from: string, channel: string, message: string }
- * AGT-271: Now parses @mentions and creates notifications
  */
 http.route({
   path: "/postToChannel",
@@ -3008,33 +2648,6 @@ http.route({
             source: "agent_session",
           },
         });
-
-        // AGT-271: Parse @mentions and create notifications
-        const mentionRegex = /@(\w+)/gi;
-        const matches = message.matchAll(mentionRegex);
-        const mentionedNames = new Set<string>();
-        for (const match of matches) {
-          mentionedNames.add(match[1].toLowerCase());
-        }
-
-        // Create notification for each mentioned agent (excluding sender)
-        const fromLower = from.toLowerCase();
-        for (const mentionedName of mentionedNames) {
-          if (mentionedName === fromLower) continue; // Don't notify self
-
-          const mentionedAgent = agents.find(
-            (a: any) => a.name.toLowerCase() === mentionedName
-          );
-          if (mentionedAgent) {
-            await ctx.runMutation(api.notifications.create, {
-              to: mentionedAgent._id,
-              from: agent._id,
-              type: "mention",
-              title: `${agent.name} mentioned you in #${channel}`,
-              message: message.slice(0, 150) + (message.length > 150 ? "..." : ""),
-            });
-          }
-        }
       }
 
       return new Response(JSON.stringify({ success: true, channel, from }), {
@@ -3642,484 +3255,35 @@ http.route({
 });
 
 // ============================================================
-// GIT ACTIVITY ENDPOINTS (AGT-80)
+// DEVICE SYNC ENDPOINTS
 // ============================================================
 
 /**
- * GET /getGitActivity — Get recent git activity
- * Query params: agentName (optional), limit (optional, default 20)
+ * POST /v2/sessionState — Update session state for agent on device
  */
 http.route({
-  path: "/getGitActivity",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const agentName = url.searchParams.get("agentName");
-      const limitStr = url.searchParams.get("limit");
-      const limit = limitStr ? Math.min(parseInt(limitStr, 10), 100) : 20;
-
-      let commits;
-      if (agentName) {
-        commits = await ctx.runQuery(api.gitActivity.getByAgent, {
-          agentName,
-          limit,
-        });
-      } else {
-        commits = await ctx.runQuery(api.gitActivity.getRecent, { limit });
-      }
-
-      return new Response(
-        JSON.stringify({ commits, count: commits.length }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("Get git activity error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /getGitActivitySummary — Get git activity summary by agent
- * Query params: startTs, endTs (optional, default last 7 days)
- */
-http.route({
-  path: "/getGitActivitySummary",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const startTs = url.searchParams.get("startTs");
-      const endTs = url.searchParams.get("endTs");
-
-      const summary = await ctx.runQuery(api.gitActivity.getSummaryByAgent, {
-        startTs: startTs ? parseInt(startTs, 10) : undefined,
-        endTs: endTs ? parseInt(endTs, 10) : undefined,
-      });
-
-      return new Response(JSON.stringify(summary), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("Get git summary error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// ============================================================
-// COST TRACKING ENDPOINTS
-// ============================================================
-
-/**
- * GET /getTaskCosts — Get cost data for a specific task
- * Query params: taskId (required) - either Convex ID or linearIdentifier (AGT-XXX)
- */
-http.route({
-  path: "/getTaskCosts",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const taskId = url.searchParams.get("taskId");
-
-      if (!taskId) {
-        return new Response(
-          JSON.stringify({ error: "taskId query parameter is required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      // If taskId looks like "AGT-XXX", look up by linearIdentifier
-      let task;
-      if (taskId.toUpperCase().startsWith("AGT-")) {
-        const allTasks = await ctx.runQuery(api.tasks.list, {});
-        task = allTasks.find(
-          (t) => t.linearIdentifier?.toUpperCase() === taskId.toUpperCase()
-        );
-      } else {
-        // Assume it's a Convex ID
-        task = await ctx.runQuery(api.tasks.get, { id: taskId as Id<"tasks"> });
-      }
-
-      if (!task) {
-        return new Response(
-          JSON.stringify({ error: `Task not found: ${taskId}` }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      // Get task with costs
-      const taskWithCosts = await ctx.runQuery(api.tasks.getWithCosts, {
-        id: task._id,
-      });
-
-      return new Response(JSON.stringify(taskWithCosts), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("Get task costs error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /getCostSummary — Get cost summary across all tasks
- * Query params: startTs, endTs (optional) - time range in milliseconds
- */
-http.route({
-  path: "/getCostSummary",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const startTs = url.searchParams.get("startTs");
-      const endTs = url.searchParams.get("endTs");
-
-      const summary = await ctx.runQuery(api.tasks.getCostSummary, {
-        startTs: startTs ? parseInt(startTs, 10) : undefined,
-        endTs: endTs ? parseInt(endTs, 10) : undefined,
-      });
-
-      return new Response(JSON.stringify(summary), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("Get cost summary error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /getTasksWithCosts — List tasks with their cost data
- * Query params: status (optional), limit (optional, max 100)
- */
-http.route({
-  path: "/getTasksWithCosts",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const status = url.searchParams.get("status") as
-        | "backlog"
-        | "todo"
-        | "in_progress"
-        | "review"
-        | "done"
-        | null;
-      const limitStr = url.searchParams.get("limit");
-      const limit = limitStr ? Math.min(parseInt(limitStr, 10), 100) : 50;
-
-      const tasks = await ctx.runQuery(api.tasks.listWithCosts, {
-        status: status || undefined,
-        limit,
-      });
-
-      return new Response(JSON.stringify({ tasks, count: tasks.length }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("Get tasks with costs error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// ============================================================
-// AGT-268: AGENT COMPLETION STATS ENDPOINTS
-// ============================================================
-
-/**
- * GET /agentStats — Per-agent ticket completion stats
- * Returns: completion counts for all agents (24h, 7d, all-time)
- */
-http.route({
-  path: "/agentStats",
-  method: "GET",
-  handler: httpAction(async (ctx) => {
-    try {
-      const stats = await ctx.runQuery(api.agentStats.getCompletionStats);
-      return new Response(JSON.stringify(stats), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("agentStats error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /agentStats/agent?agent=sam — Stats for a specific agent
- * Query params: agent (required)
- */
-http.route({
-  path: "/agentStats/agent",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const agent = url.searchParams.get("agent");
-
-      if (!agent) {
-        return new Response(
-          JSON.stringify({ error: "agent query param required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      const stats = await ctx.runQuery(api.agentStats.getAgentCompletionStats, {
-        agent,
-      });
-
-      if (!stats) {
-        return new Response(
-          JSON.stringify({ error: `Agent ${agent} not found` }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(JSON.stringify(stats), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("agentStats/agent error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /teamSummary — Team-wide completion stats summary
- * Quick glance view for CEO dashboard
- */
-http.route({
-  path: "/teamSummary",
-  method: "GET",
-  handler: httpAction(async (ctx) => {
-    try {
-      const summary = await ctx.runQuery(api.agentStats.getTeamSummary);
-      return new Response(JSON.stringify(summary), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("teamSummary error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /completionTrends — Completion stats with week-over-week trends
- * Shows if agents are improving
- */
-http.route({
-  path: "/completionTrends",
-  method: "GET",
-  handler: httpAction(async (ctx) => {
-    try {
-      const trends = await ctx.runQuery(api.agentStats.getCompletionTrends);
-      return new Response(JSON.stringify(trends), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("completionTrends error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// ============================================================
-// TASK HISTORY ENDPOINTS (Task 3.1: History Tracking)
-// ============================================================
-
-/**
- * GET /taskHistory?agent=sam&limit=50 — Get detailed task history for an agent
- * Query params: agent (required), limit (optional), since (optional timestamp)
- */
-http.route({
-  path: "/taskHistory",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const agent = url.searchParams.get("agent");
-      const limitStr = url.searchParams.get("limit");
-      const sinceStr = url.searchParams.get("since");
-
-      if (!agent) {
-        return new Response(
-          JSON.stringify({ error: "agent query param required" }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      const history = await ctx.runQuery(api.agentStats.getTaskHistory, {
-        agent,
-        limit: limitStr ? parseInt(limitStr, 10) : undefined,
-        since: sinceStr ? parseInt(sinceStr, 10) : undefined,
-      });
-
-      return new Response(JSON.stringify(history), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("taskHistory error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-/**
- * GET /teamTaskHistory?days=7 — Get team-wide task history summary
- * Query params: days (optional, default 7)
- */
-http.route({
-  path: "/teamTaskHistory",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const daysStr = url.searchParams.get("days");
-
-      const history = await ctx.runQuery(api.agentStats.getTeamTaskHistory, {
-        days: daysStr ? parseInt(daysStr, 10) : undefined,
-      });
-
-      return new Response(JSON.stringify(history), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      console.error("teamTaskHistory error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// ============================================================
-// INCIDENT LOGGING (AGT-277: Git Rollback Mechanism)
-// ============================================================
-
-/**
- * POST /logIncident — Log build failures and auto-rollback events
- * Called by post-commit hook when build fails
- */
-http.route({
-  path: "/logIncident",
+  path: "/v2/sessionState",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     try {
       const body = await request.json();
-      const {
-        agentName,
-        level = "error",
-        message,
-        metadata,
-        timestamp,
-      } = body;
+      const { device, agent, status, currentTask, currentFile, notes, metadata } = body;
 
-      if (!agentName || !message) {
+      if (!device || !agent || !status) {
         return new Response(
-          JSON.stringify({ error: "Missing required fields: agentName, message" }),
+          JSON.stringify({ error: "Missing required fields: device, agent, status" }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
 
-      // Log to executionLogs table
-      await ctx.runMutation(api.execution.logExecution, {
-        agentName,
-        level: level as "debug" | "info" | "warn" | "error",
-        message,
-        metadata: metadata ? {
-          command: metadata.command,
-          error: metadata.buildError || metadata.error,
-          filesAffected: metadata.branch ? [metadata.branch] : undefined,
-        } : undefined,
-      });
-
-      return new Response(
-        JSON.stringify({ success: true, logged: true }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    } catch (error) {
-      console.error("logIncident error:", error);
-      return new Response(
-        JSON.stringify({ error: "Internal server error" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }),
-});
-
-// ============================================================
-// P0 CEO REQUEST: Channel Messages with Keywords
-// For LEO's AgentCommsWidget
-// ============================================================
-
-/**
- * GET /getChannelMessagesWithKeywords — Get channel messages with extracted keywords
- * Query params: channel (optional), limit (optional, default 20)
- * Returns: { messages: [{ id, sender, channel, keywords[], summary, timestamp }], count, updatedAt }
- */
-http.route({
-  path: "/getChannelMessagesWithKeywords",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    try {
-      const url = new URL(request.url);
-      const channel = url.searchParams.get("channel") || undefined;
-      const limitParam = url.searchParams.get("limit");
-      const limit = limitParam ? parseInt(limitParam, 10) : 20;
-
-      const result = await ctx.runQuery(api.agentMessages.getChannelMessagesWithKeywords, {
-        channel,
-        limit,
+      const result = await ctx.runMutation(api.deviceSync.updateSessionState, {
+        device,
+        agent,
+        status,
+        currentTask,
+        currentFile,
+        notes,
+        metadata,
       });
 
       return new Response(JSON.stringify(result), {
@@ -4127,7 +3291,99 @@ http.route({
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("getChannelMessagesWithKeywords error:", error);
+      console.error("Session state update error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /v2/syncOverview — Get sync overview of all devices and agents
+ */
+http.route({
+  path: "/v2/syncOverview",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    try {
+      const overview = await ctx.runQuery(api.deviceSync.getSyncOverview);
+
+      return new Response(JSON.stringify(overview), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Sync overview error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /v2/deviceSessions?device=mac-mini — Get sessions for specific device
+ */
+http.route({
+  path: "/v2/deviceSessions",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const device = url.searchParams.get("device");
+
+      if (!device) {
+        return new Response(
+          JSON.stringify({ error: "Missing required param: device" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const sessions = await ctx.runQuery(api.deviceSync.getDeviceSessionStates, { device });
+
+      return new Response(JSON.stringify({ device, sessions }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Device sessions error:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }),
+});
+
+/**
+ * GET /v2/agentSessions?agent=max — Get sessions for specific agent across devices
+ */
+http.route({
+  path: "/v2/agentSessions",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const agent = url.searchParams.get("agent");
+
+      if (!agent) {
+        return new Response(
+          JSON.stringify({ error: "Missing required param: agent" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const sessions = await ctx.runQuery(api.deviceSync.getAgentSessionStates, { agent });
+
+      return new Response(JSON.stringify({ agent, sessions }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Agent sessions error:", error);
       return new Response(
         JSON.stringify({ error: "Internal server error" }),
         { status: 500, headers: { "Content-Type": "application/json" } }

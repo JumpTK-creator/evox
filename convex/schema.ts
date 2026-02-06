@@ -1246,4 +1246,120 @@ export default defineSchema({
   })
     .index("by_execution", ["executionId", "timestamp"])
     .index("by_execution_step", ["executionId", "step"]),
+
+  // Device Sync - Cross-device session state
+  sessionStates: defineTable({
+    device: v.string(), // "mac-mini" | "macbook" | other device identifier
+    agent: v.string(), // Agent name (evox, sam, leo, max, etc.)
+    status: v.union(
+      v.literal("active"),
+      v.literal("idle"),
+      v.literal("offline")
+    ),
+    currentTask: v.optional(v.string()), // Current task ID or description
+    currentFile: v.optional(v.string()), // Current file being worked on
+    notes: v.optional(v.string()), // Session notes
+    metadata: v.optional(v.object({
+      hostname: v.optional(v.string()),
+      workingDirectory: v.optional(v.string()),
+      gitBranch: v.optional(v.string()),
+    })),
+    lastHeartbeat: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_agent", ["agent"])
+    .index("by_device", ["device"])
+    .index("by_device_agent", ["device", "agent"])
+    .index("by_lastHeartbeat", ["lastHeartbeat"]),
+
+  // Agent Feedback - Quality ratings and feedback
+  agentFeedback: defineTable({
+    targetAgent: v.string(), // Agent receiving feedback (e.g., "evox")
+    fromAgent: v.optional(v.string()), // Agent giving feedback (e.g., "max")
+    fromUser: v.optional(v.string()), // User giving feedback (e.g., "ceo")
+    taskId: v.optional(v.string()), // Related task/ticket
+    rating: v.union(
+      v.literal(1), // Poor
+      v.literal(2), // Below average
+      v.literal(3), // Average
+      v.literal(4), // Good
+      v.literal(5)  // Excellent
+    ),
+    category: v.union(
+      v.literal("quality"),       // Output quality
+      v.literal("speed"),         // Execution speed
+      v.literal("communication"), // Communication clarity
+      v.literal("coordination"),  // Team coordination
+      v.literal("autonomy"),      // Autonomous decision-making
+      v.literal("accuracy")       // Task accuracy
+    ),
+    feedback: v.string(), // Written feedback
+    suggestions: v.optional(v.string()), // Improvement suggestions
+    createdAt: v.number(),
+  })
+    .index("by_target", ["targetAgent", "createdAt"])
+    .index("by_category", ["targetAgent", "category"])
+    .index("by_rating", ["targetAgent", "rating"]),
+
+  // Agent Learnings - Lessons learned and best practices
+  agentLearnings: defineTable({
+    agent: v.string(), // Agent that learned (e.g., "evox")
+    title: v.string(), // Short title
+    category: v.union(
+      v.literal("mistake"),      // Mistake to avoid
+      v.literal("best-practice"), // Best practice discovered
+      v.literal("quality-tip"),   // Quality improvement tip
+      v.literal("workflow"),      // Workflow improvement
+      v.literal("communication"), // Communication lesson
+      v.literal("coordination")   // Coordination lesson
+    ),
+    lesson: v.string(), // The learning content
+    context: v.optional(v.string()), // When/where this was learned
+    relatedTask: v.optional(v.string()), // Related task/ticket
+    importance: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high"),
+      v.literal("critical")
+    ),
+    verified: v.boolean(), // Has this been verified/validated?
+    verifiedBy: v.optional(v.string()), // Who verified (CEO, agent)
+    createdAt: v.number(),
+    appliedCount: v.optional(v.number()), // How many times applied
+  })
+    .index("by_agent", ["agent", "createdAt"])
+    .index("by_category", ["agent", "category"])
+    .index("by_importance", ["agent", "importance"])
+    .index("by_verified", ["agent", "verified"]),
+
+  // Agent Skills - Skills and proficiency levels
+  agentSkills: defineTable({
+    agent: v.string(), // Agent (e.g., "evox")
+    skill: v.string(), // Skill name
+    category: v.union(
+      v.literal("coordination"),
+      v.literal("communication"),
+      v.literal("quality-control"),
+      v.literal("task-management"),
+      v.literal("technical"),
+      v.literal("leadership")
+    ),
+    proficiency: v.union(
+      v.literal(1), // Beginner
+      v.literal(2), // Intermediate
+      v.literal(3), // Advanced
+      v.literal(4), // Expert
+      v.literal(5)  // Master
+    ),
+    description: v.string(), // Skill description
+    learningNotes: v.optional(v.string()), // How to improve
+    lastPracticed: v.optional(v.number()), // Last time used
+    practiceCount: v.optional(v.number()), // How many times practiced
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_agent", ["agent"])
+    .index("by_skill", ["agent", "skill"])
+    .index("by_category", ["agent", "category"])
+    .index("by_proficiency", ["agent", "proficiency"]),
 });
